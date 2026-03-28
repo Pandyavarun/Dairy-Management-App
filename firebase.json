@@ -1,0 +1,34 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "dairy-management-d8099",
+          "appId": "1:444008877445:android:b2f89549bf1b6087c5c8ec",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "dairy-management-d8099",
+          "appId": "1:444008877445:ios:b0c91f029cce9e3ac5c8ec",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "dairy-management-d8099",
+          "configurations": {
+            "android": "1:444008877445:android:b2f89549bf1b6087c5c8ec",
+            "ios": "1:444008877445:ios:b0c91f029cce9e3ac5c8ec"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
