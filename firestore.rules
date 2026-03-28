@@ -1,0 +1,344 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userPath(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function customerPath(customerId) {
+      return /databases/$(database)/documents/customers/$(customerId);
+    }
+
+    function isSignedInUser(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function currentUserExists() {
+      return signedIn() && exists(userPath(request.auth.uid));
+    }
+
+    function currentUserData() {
+      return get(userPath(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return currentUserExists()
+          && currentUserData().role == 'admin'
+          && currentUserData().isActive == true;
+    }
+
+    function isDeliveryBoy() {
+      return currentUserExists()
+          && currentUserData().role == 'delivery_boy'
+          && currentUserData().isActive == true;
+    }
+
+    function isValidUserRole(role) {
+      return role == 'admin' || role == 'delivery_boy';
+    }
+
+    function optionalString(data, key) {
+      return !(key in data) || data[key] is string;
+    }
+
+    function optionalNumber(data, key) {
+      return !(key in data) || (data[key] is number && data[key] >= 0);
+    }
+
+    function optionalBool(data, key) {
+      return !(key in data) || data[key] is bool;
+    }
+
+    function optionalTimestamp(data, key) {
+      return !(key in data) || data[key] is timestamp;
+    }
+
+    function deliveryBoyExists(deliveryBoyId) {
+      return deliveryBoyId is string
+          && deliveryBoyId.size() > 0
+          && exists(userPath(deliveryBoyId))
+          && get(userPath(deliveryBoyId)).data.role == 'delivery_boy'
+          && get(userPath(deliveryBoyId)).data.isActive == true;
+    }
+
+    function isValidUserData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'name',
+            'email',
+            'phone',
+            'role',
+            'isActive',
+            'createdAt',
+            'updatedAt',
+          ])
+          && data.keys().hasAll([
+            'name',
+            'email',
+            'role',
+            'isActive',
+          ])
+          && data.name is string
+          && data.name.size() > 0
+          && data.email is string
+          && data.email.size() > 0
+          && optionalString(data, 'phone')
+          && isValidUserRole(data.role)
+          && data.isActive is bool
+          && optionalTimestamp(data, 'createdAt')
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
+    function isValidCustomerData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'name',
+            'phone',
+            'address',
+            'morningQty',
+            'eveningQty',
+            'assignedDeliveryBoyId',
+            'ratePerLiter',
+            'isActive',
+            'createdAt',
+            'updatedAt',
+          ])
+          && data.keys().hasAll([
+            'name',
+            'phone',
+            'address',
+            'morningQty',
+            'eveningQty',
+            'assignedDeliveryBoyId',
+          ])
+          && data.name is string
+          && data.name.size() > 0
+          && data.phone is string
+          && data.phone.size() > 0
+          && data.address is string
+          && data.address.size() > 0
+          && data.morningQty is number
+          && data.morningQty >= 0
+          && data.eveningQty is number
+          && data.eveningQty >= 0
+          && deliveryBoyExists(data.assignedDeliveryBoyId)
+          && optionalNumber(data, 'ratePerLiter')
+          && optionalBool(data, 'isActive')
+          && optionalTimestamp(data, 'createdAt')
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
+    function customerData(customerId) {
+      return get(customerPath(customerId)).data;
+    }
+
+    function isActiveCustomerForDeliveryBoy(customerId, deliveryBoyId) {
+      return exists(customerPath(customerId))
+          && customerData(customerId).assignedDeliveryBoyId == deliveryBoyId
+          && (!('isActive' in customerData(customerId))
+              || customerData(customerId).isActive == true);
+    }
+
+    function plannedQtyForShift(customerId, shift) {
+      return shift == 'morning'
+          ? customerData(customerId).morningQty
+          : customerData(customerId).eveningQty;
+    }
+
+    function isValidDeliveryData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'customerId',
+            'customerName',
+            'deliveryBoyId',
+            'date',
+            'dateKey',
+            'monthKey',
+            'shift',
+            'plannedQty',
+            'deliveredQty',
+            'ratePerLiter',
+            'status',
+            'updatedBy',
+            'createdAt',
+            'updatedAt',
+          ])
+          && data.keys().hasAll([
+            'customerId',
+            'customerName',
+            'deliveryBoyId',
+            'date',
+            'dateKey',
+            'monthKey',
+            'shift',
+            'plannedQty',
+            'deliveredQty',
+            'status',
+            'updatedBy',
+          ])
+          && data.customerId is string
+          && data.customerId.size() > 0
+          && data.customerName is string
+          && data.customerName.size() > 0
+          && data.deliveryBoyId is string
+          && data.deliveryBoyId.size() > 0
+          && data.date is timestamp
+          && data.dateKey is string
+          && data.dateKey.size() > 0
+          && data.monthKey is string
+          && data.monthKey.size() > 0
+          && (data.shift == 'morning' || data.shift == 'evening')
+          && data.plannedQty is number
+          && data.plannedQty >= 0
+          && data.deliveredQty is number
+          && data.deliveredQty >= 0
+          && ((data.deliveredQty == 0 && data.status == 'pending')
+              || (data.deliveredQty > 0 && data.status == 'delivered'))
+          && data.updatedBy is string
+          && data.updatedBy.size() > 0
+          && optionalNumber(data, 'ratePerLiter')
+          && optionalTimestamp(data, 'createdAt')
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
+    function isValidPaymentMode(mode) {
+      return mode == 'cash' || mode == 'upi' || mode == 'bank_transfer';
+    }
+
+    function isValidPaymentData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'customerId',
+            'amount',
+            'date',
+            'monthKey',
+            'paymentMode',
+            'createdBy',
+            'notes',
+          ])
+          && data.keys().hasAll([
+            'customerId',
+            'amount',
+            'date',
+            'monthKey',
+            'paymentMode',
+            'createdBy',
+          ])
+          && data.customerId is string
+          && data.customerId.size() > 0
+          && exists(customerPath(data.customerId))
+          && data.amount is number
+          && data.amount > 0
+          && data.date is timestamp
+          && data.monthKey is string
+          && data.monthKey.size() > 0
+          && data.paymentMode is string
+          && isValidPaymentMode(data.paymentMode)
+          && data.createdBy is string
+          && data.createdBy.size() > 0
+          && optionalString(data, 'notes');
+    }
+
+    function isValidVendorPurchaseData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'vendorName',
+            'quantity',
+            'rate',
+            'totalAmount',
+            'date',
+            'monthKey',
+            'createdBy',
+          ])
+          && data.keys().hasAll([
+            'vendorName',
+            'quantity',
+            'rate',
+            'totalAmount',
+            'date',
+            'monthKey',
+            'createdBy',
+          ])
+          && data.vendorName is string
+          && data.vendorName.size() > 0
+          && data.quantity is number
+          && data.quantity > 0
+          && data.rate is number
+          && data.rate > 0
+          && data.totalAmount is number
+          && data.totalAmount >= 0
+          && data.date is timestamp
+          && data.monthKey is string
+          && data.monthKey.size() > 0
+          && data.createdBy is string
+          && data.createdBy.size() > 0;
+    }
+
+    function isDeliveryBoyDeliveryWrite() {
+      let data = request.resource.data;
+
+      return isDeliveryBoy()
+          && isValidDeliveryData()
+          && data.deliveryBoyId == request.auth.uid
+          && data.updatedBy == request.auth.uid
+          && isActiveCustomerForDeliveryBoy(data.customerId, request.auth.uid)
+          && data.customerName == customerData(data.customerId).name
+          && data.plannedQty == plannedQtyForShift(data.customerId, data.shift);
+    }
+
+    match /users/{userId} {
+      allow get: if isAdmin() || isSignedInUser(userId);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && isValidUserData();
+      allow delete: if isAdmin();
+    }
+
+    match /customers/{customerId} {
+      allow read: if isAdmin()
+          || (isDeliveryBoy()
+              && resource.data.assignedDeliveryBoyId == request.auth.uid
+              && (!('isActive' in resource.data) || resource.data.isActive == true));
+      allow create, update: if isAdmin() && isValidCustomerData();
+      allow delete: if isAdmin();
+    }
+
+    match /deliveries/{deliveryId} {
+      allow read: if isAdmin()
+          || (isDeliveryBoy() && resource.data.deliveryBoyId == request.auth.uid);
+      allow create, update: if (isAdmin() && isValidDeliveryData())
+          || isDeliveryBoyDeliveryWrite();
+      allow delete: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidPaymentData();
+      allow delete: if isAdmin();
+    }
+
+    match /vendor_purchases/{purchaseId} {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidVendorPurchaseData();
+      allow delete: if isAdmin();
+    }
+
+    match /settings/{documentId} {
+      allow read: if isAdmin() || isDeliveryBoy();
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "444008877445",
+    "project_id": "dairy-management-d8099",
+    "storage_bucket": "dairy-management-d8099.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:444008877445:android:b2f89549bf1b6087c5c8ec",
+        "android_client_info": {
+          "package_name": "com.varun.dairy_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhyGkhtFIhqb8RwyXHUILjLwZc3U1FjhA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

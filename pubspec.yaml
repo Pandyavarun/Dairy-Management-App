@@ -1,0 +1,28 @@
+name: dairy_management
+description: Personal dairy management app built with Flutter and Firebase.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.8.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  firebase_core: ^4.5.0
+  firebase_auth: ^6.2.0
+  cloud_firestore: ^6.1.3
+  provider: ^6.1.5+1
+  intl: ^0.20.2
+  path_provider: ^2.1.5
+  pdf: ^3.11.3
+  share_plus: ^12.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
