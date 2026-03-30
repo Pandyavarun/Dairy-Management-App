@@ -27,6 +27,18 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF47685A),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF2D312D),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
@@ -49,23 +61,57 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Update Delivery'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              title: const Text(
+                'Update Delivery',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(delivery.customerName),
-                  const SizedBox(height: 4),
                   Text(
-                    '${delivery.shift.label} • Planned ${delivery.plannedQty.toStringAsFixed(1)} L',
+                    delivery.customerName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 16,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF47685A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${delivery.productName} • ${delivery.shift.label} • Planned ${delivery.plannedQty.toStringAsFixed(1)} ${delivery.unitLabel}',
+                      style: const TextStyle(
+                        color: Color(0xFF47685A),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   TextField(
                     controller: controller,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
-                      labelText: 'Delivered Qty (L)',
+                      labelText: 'Delivered Qty (${delivery.unitLabel})',
                       errorText: errorText,
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -87,6 +133,12 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
 
                     Navigator.of(dialogContext).pop(value);
                   },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF47685A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                   child: const Text('Save'),
                 ),
               ],
@@ -116,8 +168,12 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Delivery updated successfully.'),
+        SnackBar(
+          content: const Text('Delivery updated successfully.'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       );
     } on FirebaseException catch (error) {
@@ -127,7 +183,14 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(error.message ?? 'Unable to update delivery right now.'),
+          content: Text(
+            error.message ?? 'Unable to update delivery right now.',
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: Colors.red,
         ),
       );
     } catch (_) {
@@ -136,8 +199,13 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to update delivery right now.'),
+        SnackBar(
+          content: const Text('Unable to update delivery right now.'),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          backgroundColor: Colors.red,
         ),
       );
     }
@@ -148,8 +216,15 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
     final deliveryService = context.read<DeliveryService>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F1),
       appBar: AppBar(
-        title: const Text('Deliveries'),
+        title: const Text(
+          'Deliveries',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF47685A),
+        foregroundColor: Colors.white,
       ),
       body: StreamBuilder<List<DeliveryRecord>>(
         stream: deliveryService.watchDeliveriesForDate(_selectedDate),
@@ -165,7 +240,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
           );
 
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
               PeriodSelectorCard(
                 title: 'Selected Day',
@@ -182,81 +257,64 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
                 },
                 onTap: _pickDate,
               ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
+              const SizedBox(height: 20),
+              Row(
                 children: [
-                  SizedBox(
-                    width: 220,
+                  Expanded(
                     child: SummaryMetricCard(
-                      title: 'Milk Delivered',
-                      value: '${totalMilk.toStringAsFixed(1)} L',
+                      title: 'Total Quantity',
+                      value: totalMilk.toStringAsFixed(1),
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: SummaryMetricCard(
                       title: 'Sales Amount',
                       value: AppCurrencyFormatter.amount(totalAmount),
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
-                    child: SummaryMetricCard(
-                      title: 'Entries',
-                      value: deliveries.length.toString(),
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 20),
-              if (snapshot.connectionState == ConnectionState.waiting)
-                const Center(child: CircularProgressIndicator())
-              else if (snapshot.hasError)
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Daily Entries (${deliveries.length})',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2D312D),
+                    ),
+                  ),
+                  if (snapshot.connectionState == ConnectionState.waiting)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (snapshot.hasError)
                 const _DeliveryMessageCard(
+                  icon: Icons.error_outline_rounded,
                   title: 'Unable to load deliveries',
                   description: 'Please try again shortly.',
                 )
-              else if (deliveries.isEmpty)
+              else if (snapshot.connectionState != ConnectionState.waiting &&
+                  deliveries.isEmpty)
                 const _DeliveryMessageCard(
+                  icon: Icons.assignment_outlined,
                   title: 'No deliveries for this day',
-                  description: 'Once delivery boys save quantities, records will appear here.',
+                  description:
+                      'Once delivery boys save quantities, records will appear here.',
                 )
               else
                 ...deliveries.map(
-                  (delivery) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              delivery.customerName,
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text('Shift: ${delivery.shift.label}'),
-                            Text('Planned: ${delivery.plannedQty.toStringAsFixed(1)} L'),
-                            Text('Delivered: ${delivery.deliveredQty.toStringAsFixed(1)} L'),
-                            Text(
-                              'Amount: ${AppCurrencyFormatter.amount(delivery.lineAmount)}',
-                            ),
-                            Text('Status: ${delivery.status}'),
-                            const SizedBox(height: 12),
-                            FilledButton.tonalIcon(
-                              onPressed: () => _editDelivery(delivery),
-                              icon: const Icon(Icons.edit_rounded),
-                              label: const Text('Edit Delivery'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  (delivery) => _DeliveryItemCard(
+                    delivery: delivery,
+                    onEdit: () => _editDelivery(delivery),
                   ),
                 ),
             ],
@@ -267,34 +325,158 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
   }
 }
 
+class _DeliveryItemCard extends StatelessWidget {
+  const _DeliveryItemCard({required this.delivery, required this.onEdit});
+
+  final DeliveryRecord delivery;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDelivered = delivery.status == 'delivered';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: (isDelivered ? Colors.green : Colors.orange)
+                        .withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isDelivered
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.pending_outlined,
+                    color: isDelivered ? Colors.green : Colors.orange,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        delivery.customerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Text(
+                        '${delivery.productName} • ${delivery.shift.label}',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      AppCurrencyFormatter.amount(delivery.lineAmount),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Color(0xFF47685A),
+                      ),
+                    ),
+                    Text(
+                      '${delivery.deliveredQty.toStringAsFixed(1)} ${delivery.unitLabel}',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Planned: ${delivery.plannedQty.toStringAsFixed(1)} ${delivery.unitLabel}',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Edit Entry'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF47685A),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _DeliveryMessageCard extends StatelessWidget {
   const _DeliveryMessageCard({
+    required this.icon,
     required this.title,
     required this.description,
   });
 
+  final IconData icon;
   final String title;
   final String description;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 48, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+        ],
       ),
     );
   }

@@ -4,8 +4,12 @@ import 'package:provider/provider.dart';
 import '../../config/app_date_formatter.dart';
 import '../../controllers/auth_controller.dart';
 import '../../models/customer.dart';
+import '../../models/customer_leave.dart';
+import '../../models/delivery_entry_item.dart';
 import '../../models/delivery_record.dart';
 import '../../models/delivery_shift.dart';
+import '../../services/customer_leave_service.dart';
+import '../../services/customer_planning_service.dart';
 import '../../services/customer_service.dart';
 import '../../services/delivery_service.dart';
 import '../../widgets/period_selector_card.dart';
@@ -56,6 +60,18 @@ class _DeliveryEntriesScreenState extends State<DeliveryEntriesScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF47685A),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF2D312D),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
@@ -65,28 +81,143 @@ class _DeliveryEntriesScreenState extends State<DeliveryEntriesScreen> {
     }
   }
 
+  List<DeliveryEntryItem> _buildDeliveryItems({
+    required Customer customer,
+    required Iterable<CustomerLeave> leaves,
+    required Iterable<DeliveryRecord> deliveries,
+  }) {
+    final recurringSubscriptions =
+        CustomerPlanningService.recurringSubscriptionsForDate(
+          customer: customer,
+          date: _selectedDate,
+        );
+    final recordsBySubscription = {
+      for (final delivery in deliveries) delivery.subscriptionId: delivery,
+    };
+    final items = <DeliveryEntryItem>[];
+
+    for (final subscription in recurringSubscriptions) {
+      final isOnLeave = CustomerPlanningService.isSubscriptionOnLeave(
+        customer: customer,
+        subscription: subscription,
+        date: _selectedDate,
+        leaves: leaves,
+      );
+
+      items.add(
+        DeliveryEntryItem(
+          subscriptionId: subscription.id,
+          productId: subscription.productId,
+          productName: subscription.productName,
+          unitLabel: subscription.unitLabel,
+          shift: subscription.shift,
+          rate: subscription.rate,
+          plannedQty: isOnLeave ? 0 : subscription.quantity,
+          scheduleLabel: subscription.scheduleLabel,
+          notes: subscription.notes,
+          isOnLeave: isOnLeave,
+          existingRecord: recordsBySubscription.remove(subscription.id),
+        ),
+      );
+    }
+
+    for (final record in recordsBySubscription.values) {
+      items.add(
+        DeliveryEntryItem(
+          subscriptionId: record.subscriptionId,
+          productId: record.productId,
+          productName: record.productName,
+          unitLabel: record.unitLabel,
+          shift: record.shift,
+          rate: record.ratePerLiter,
+          plannedQty: record.plannedQty,
+          scheduleLabel: 'Recorded entry',
+          existingRecord: record,
+        ),
+      );
+    }
+
+    items.sort((first, second) {
+      final byShift = _shiftSortIndex(
+        first.shift,
+      ).compareTo(_shiftSortIndex(second.shift));
+      if (byShift != 0) {
+        return byShift;
+      }
+
+      return first.productName.toLowerCase().compareTo(
+        second.productName.toLowerCase(),
+      );
+    });
+
+    return items;
+  }
+
+  int _shiftSortIndex(DeliveryShift shift) {
+    switch (shift) {
+      case DeliveryShift.morning:
+        return 0;
+      case DeliveryShift.evening:
+        return 1;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.read<AuthController>().appUser;
     final customerService = context.read<CustomerService>();
+    final customerLeaveService = context.read<CustomerLeaveService>();
     final deliveryService = context.read<DeliveryService>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F1),
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF47685A),
+        foregroundColor: Colors.white,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
           if (widget.description != null) ...[
-            Text(
-              widget.description!,
-              style: Theme.of(context).textTheme.bodyMedium,
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF47685A).withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFF47685A).withValues(alpha: 0.1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: Color(0xFF47685A),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.description!,
+                      style: const TextStyle(
+                        color: Color(0xFF47685A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
           ],
           PeriodSelectorCard(
-            title: 'Selected Day',
+            title: 'Route Date',
             label: AppDateFormatter.fullDateLabel(_selectedDate),
             onPrevious: () {
               setState(() {
@@ -100,14 +231,29 @@ class _DeliveryEntriesScreenState extends State<DeliveryEntriesScreen> {
             },
             onTap: _pickDate,
           ),
-          const SizedBox(height: 20),
-          Text(
-            'Assigned Customers',
-            style: Theme.of(context).textTheme.titleLarge,
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              const Icon(
+                Icons.route_outlined,
+                color: Color(0xFF47685A),
+                size: 24,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Delivery Route',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF2D312D),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           StreamBuilder<List<Customer>>(
-            stream: customerService.watchCustomersForDeliveryBoy(user?.id ?? ''),
+            stream: customerService.watchCustomersForDeliveryBoy(
+              user?.id ?? '',
+            ),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const _DeliveryInfoCard(
@@ -128,71 +274,103 @@ class _DeliveryEntriesScreenState extends State<DeliveryEntriesScreen> {
               final customers = snapshot.data ?? const <Customer>[];
               if (customers.isEmpty) {
                 return const _DeliveryInfoCard(
-                  icon: Icons.route_outlined,
+                  icon: Icons.person_off_outlined,
                   title: 'No assigned customers',
                   description:
-                      'This delivery account does not have any customers assigned yet.',
+                      'Your account does not have any customers assigned yet.',
                 );
               }
 
-              return StreamBuilder<List<DeliveryRecord>>(
-                stream: deliveryService.watchDailyDeliveries(
-                  deliveryBoyId: user?.id ?? '',
-                  date: _selectedDate,
-                ),
-                builder: (context, deliverySnapshot) {
-                  if (deliverySnapshot.connectionState == ConnectionState.waiting) {
-                    return const _DeliveryInfoCard(
-                      icon: Icons.water_drop_outlined,
-                      title: 'Loading deliveries',
-                      description: 'Fetching saved quantities for the selected day.',
-                    );
-                  }
+              return StreamBuilder<List<CustomerLeave>>(
+                stream: customerLeaveService.watchLeaves(),
+                builder: (context, leaveSnapshot) {
+                  final leaves = leaveSnapshot.data ?? const <CustomerLeave>[];
 
-                  if (deliverySnapshot.hasError) {
-                    return const _DeliveryInfoCard(
-                      icon: Icons.error_outline_rounded,
-                      title: 'Unable to load delivery records',
-                      description: 'Please try again in a moment.',
-                    );
-                  }
+                  return StreamBuilder<List<DeliveryRecord>>(
+                    stream: deliveryService.watchDailyDeliveries(
+                      deliveryBoyId: user?.id ?? '',
+                      date: _selectedDate,
+                    ),
+                    builder: (context, deliverySnapshot) {
+                      if (deliverySnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const _DeliveryInfoCard(
+                          icon: Icons.water_drop_outlined,
+                          title: 'Loading deliveries',
+                          description:
+                              'Fetching saved quantities for the route.',
+                        );
+                      }
 
-                  final deliveries = deliverySnapshot.data ?? const <DeliveryRecord>[];
-                  final deliveriesByKey = {
-                    for (final delivery in deliveries)
-                      '${delivery.customerId}_${delivery.shift.value}': delivery,
-                  };
+                      final deliveries =
+                          deliverySnapshot.data ?? const <DeliveryRecord>[];
+                      final deliveriesByCustomer =
+                          <String, List<DeliveryRecord>>{};
+                      for (final delivery in deliveries) {
+                        deliveriesByCustomer
+                            .putIfAbsent(
+                              delivery.customerId,
+                              () => <DeliveryRecord>[],
+                            )
+                            .add(delivery);
+                      }
 
-                  return Column(
-                    children: customers
-                        .map(
-                          (customer) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _DeliveryCustomerCard(
+                      final cards = customers
+                          .map((customer) {
+                            final items = _buildDeliveryItems(
                               customer: customer,
-                              morningRecord: deliveriesByKey[
-                                  '${customer.id}_${DeliveryShift.morning.value}'],
-                              eveningRecord: deliveriesByKey[
-                                  '${customer.id}_${DeliveryShift.evening.value}'],
-                              onUpdate: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => DeliveryUpdateScreen(
-                                      customer: customer,
-                                      deliveryBoyId: user?.id ?? '',
-                                      currentDate: _selectedDate,
-                                      morningRecord: deliveriesByKey[
-                                          '${customer.id}_${DeliveryShift.morning.value}'],
-                                      eveningRecord: deliveriesByKey[
-                                          '${customer.id}_${DeliveryShift.evening.value}'],
-                                    ),
-                                  ),
+                              leaves: leaves,
+                              deliveries:
+                                  deliveriesByCustomer[customer.id] ??
+                                  const <DeliveryRecord>[],
+                            );
+                            if (items.isEmpty) {
+                              return null;
+                            }
+
+                            final leaveSummary =
+                                CustomerPlanningService.leaveSummaryForDate(
+                                  customer: customer,
+                                  date: _selectedDate,
+                                  leaves: leaves,
                                 );
-                              },
-                            ),
-                          ),
-                        )
-                        .toList(),
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _DeliveryCustomerCard(
+                                customer: customer,
+                                items: items,
+                                leaveSummary: leaveSummary,
+                                onUpdate: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute<void>(
+                                      builder: (_) => DeliveryUpdateScreen(
+                                        customer: customer,
+                                        deliveryBoyId: user?.id ?? '',
+                                        currentDate: _selectedDate,
+                                        items: items,
+                                        leaveSummary: leaveSummary,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          })
+                          .whereType<Widget>()
+                          .toList();
+
+                      if (cards.isEmpty) {
+                        return const _DeliveryInfoCard(
+                          icon: Icons.event_available_outlined,
+                          title: 'No deliveries scheduled',
+                          description:
+                              'No product subscriptions are due for this date.',
+                        );
+                      }
+
+                      return Column(children: cards);
+                    },
                   );
                 },
               );
@@ -207,107 +385,237 @@ class _DeliveryEntriesScreenState extends State<DeliveryEntriesScreen> {
 class _DeliveryCustomerCard extends StatelessWidget {
   const _DeliveryCustomerCard({
     required this.customer,
-    required this.morningRecord,
-    required this.eveningRecord,
+    required this.items,
+    required this.leaveSummary,
     required this.onUpdate,
   });
 
   final Customer customer;
-  final DeliveryRecord? morningRecord;
-  final DeliveryRecord? eveningRecord;
+  final List<DeliveryEntryItem> items;
+  final String? leaveSummary;
   final VoidCallback onUpdate;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final totalPlannedQty = items.fold<double>(
+      0,
+      (total, item) => total + item.plannedQty,
+    );
+    final totalDeliveredQty = items.fold<double>(
+      0,
+      (total, item) => total + (item.existingRecord?.deliveredQty ?? 0),
+    );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF47685A).withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      customer.name.substring(0, 1).toUpperCase(),
+                      style: const TextStyle(
+                        color: Color(0xFF47685A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         customer.name,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 17,
+                          color: Color(0xFF2D312D),
+                        ),
                       ),
-                      const SizedBox(height: 6),
-                      Text(customer.address),
                       const SizedBox(height: 4),
-                      Text('Phone: ${customer.phone}'),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              customer.address,
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _SummaryBadge(
+                            label:
+                                '${items.length} item${items.length == 1 ? '' : 's'}',
+                          ),
+                          _SummaryBadge(
+                            label:
+                                'Planned ${totalPlannedQty.toStringAsFixed(1)}',
+                          ),
+                          if (totalDeliveredQty > 0)
+                            _SummaryBadge(
+                              label:
+                                  'Delivered ${totalDeliveredQty.toStringAsFixed(1)}',
+                            ),
+                        ],
+                      ),
+                      if (leaveSummary != null) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            leaveSummary!,
+                            style: const TextStyle(
+                              color: Color(0xFF8A5A11),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                FilledButton.tonalIcon(
+                const SizedBox(width: 12),
+                IconButton.filledTonal(
                   onPressed: onUpdate,
-                  icon: const Icon(Icons.edit_rounded),
-                  label: const Text('Update'),
+                  icon: const Icon(Icons.edit_rounded, size: 20),
+                  style: IconButton.styleFrom(
+                    backgroundColor: const Color(
+                      0xFF47685A,
+                    ).withValues(alpha: 0.1),
+                    foregroundColor: const Color(0xFF47685A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            _DeliveryShiftSummary(
-              shift: DeliveryShift.morning,
-              plannedQty: customer.morningQty,
-              record: morningRecord,
+          ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: items
+                  .map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _DeliveryItemSummary(item: item),
+                    ),
+                  )
+                  .toList(),
             ),
-            const SizedBox(height: 10),
-            _DeliveryShiftSummary(
-              shift: DeliveryShift.evening,
-              plannedQty: customer.eveningQty,
-              record: eveningRecord,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _DeliveryShiftSummary extends StatelessWidget {
-  const _DeliveryShiftSummary({
-    required this.shift,
-    required this.plannedQty,
-    required this.record,
-  });
+class _DeliveryItemSummary extends StatelessWidget {
+  const _DeliveryItemSummary({required this.item});
 
-  final DeliveryShift shift;
-  final double plannedQty;
-  final DeliveryRecord? record;
+  final DeliveryEntryItem item;
 
   @override
   Widget build(BuildContext context) {
-    final isScheduled = plannedQty > 0;
-    final deliveredQty = record?.deliveredQty;
-    final statusLabel = !isScheduled
-        ? 'Not scheduled'
-        : record == null
-            ? 'Not updated'
-            : deliveredQty == 0
-                ? 'Marked pending'
-                : 'Saved';
+    final deliveredQty = item.existingRecord?.deliveredQty;
+
+    Color statusColor = Colors.orange;
+    String statusLabel = 'Pending';
+
+    if (item.existingRecord != null) {
+      if ((deliveredQty ?? 0) > 0) {
+        statusColor = Colors.green;
+        statusLabel = 'Delivered';
+      } else {
+        statusColor = Colors.red;
+        statusLabel = 'Skipped';
+      }
+    } else if (item.isOnLeave) {
+      statusColor = Colors.teal;
+      statusLabel = 'On Leave';
+    }
+
+    final quantityText = item.existingRecord != null
+        ? 'Planned ${item.plannedQty.toStringAsFixed(1)} ${item.unitLabel} • Delivered ${(deliveredQty ?? 0).toStringAsFixed(1)} ${item.unitLabel}'
+        : item.isOnLeave
+        ? 'Leave booked for this shift. Enter quantity only if delivery still happens.'
+        : 'Planned ${item.plannedQty.toStringAsFixed(1)} ${item.unitLabel}';
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFFF8FAF8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.05)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            shift == DeliveryShift.morning
-                ? Icons.wb_sunny_outlined
-                : Icons.nights_stay_outlined,
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              item.shift == DeliveryShift.morning
+                  ? Icons.wb_sunny_rounded
+                  : Icons.nights_stay_rounded,
+              color: statusColor,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -315,27 +623,74 @@ class _DeliveryShiftSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  shift.label,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  item.productName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF2D312D),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Planned: ${plannedQty.toStringAsFixed(1)} L',
+                  '${item.shift.label} • ${item.scheduleLabel}',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  isScheduled
-                      ? 'Delivered: ${(deliveredQty ?? 0).toStringAsFixed(1)} L'
-                      : 'Delivered: 0.0 L',
+                  quantityText,
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
                 ),
+                if (item.notes.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    item.notes,
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                  ),
+                ],
               ],
             ),
           ),
-          Chip(
-            label: Text(statusLabel),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              statusLabel,
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SummaryBadge extends StatelessWidget {
+  const _SummaryBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF47685A).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF47685A),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -354,28 +709,28 @@ class _DeliveryInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Row(
-          children: [
-            Icon(icon, size: 32),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(description),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 48, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+        ],
       ),
     );
   }

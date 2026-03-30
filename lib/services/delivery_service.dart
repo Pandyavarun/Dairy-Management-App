@@ -28,15 +28,13 @@ class DeliveryService {
         .where('dateKey', isEqualTo: dateKey)
         .snapshots()
         .map((snapshot) {
-      final records = snapshot.docs.map(DeliveryRecord.fromFirestore).toList()
-        ..sort(
-          (first, second) => first.customerName.toLowerCase().compareTo(
-                second.customerName.toLowerCase(),
-              ),
-        );
+          final records = snapshot.docs
+              .map(DeliveryRecord.fromFirestore)
+              .toList();
+          _sortDeliveries(records);
 
-      return records;
-    });
+          return records;
+        });
   }
 
   Stream<List<DeliveryRecord>> watchDeliveriesForDate(DateTime date) {
@@ -74,6 +72,8 @@ class DeliveryService {
     required DateTime date,
     required double morningDeliveredQty,
     required double eveningDeliveredQty,
+    double? morningPlannedQty,
+    double? eveningPlannedQty,
   }) async {
     final batch = _firestore.batch();
 
@@ -85,6 +85,7 @@ class DeliveryService {
       date: date,
       shift: DeliveryShift.morning,
       deliveredQty: morningDeliveredQty,
+      plannedQty: morningPlannedQty,
     );
 
     _queueShiftSave(
@@ -95,16 +96,46 @@ class DeliveryService {
       date: date,
       shift: DeliveryShift.evening,
       deliveredQty: eveningDeliveredQty,
+      plannedQty: eveningPlannedQty,
     );
 
     await batch.commit();
   }
 
+  Future<void> saveDeliveryRecords({
+    required List<DeliveryRecord> records,
+    Iterable<String> deleteRecordIds = const <String>[],
+  }) async {
+    if (records.isEmpty && deleteRecordIds.isEmpty) {
+      return;
+    }
+
+    final batch = _firestore.batch();
+    final savedIds = records.map((record) => record.id).toSet();
+
+    for (final record in records) {
+      batch.set(
+        _deliveries.doc(record.id),
+        record.toFirestore(),
+        SetOptions(merge: true),
+      );
+    }
+
+    for (final recordId in deleteRecordIds.toSet()) {
+      if (savedIds.contains(recordId)) {
+        continue;
+      }
+
+      batch.delete(_deliveries.doc(recordId));
+    }
+
+    await batch.commit();
+  }
+
   Future<void> saveDeliveryRecord(DeliveryRecord record) {
-    return _deliveries.doc(record.id).set(
-          record.toFirestore(),
-          SetOptions(merge: true),
-        );
+    return _deliveries
+        .doc(record.id)
+        .set(record.toFirestore(), SetOptions(merge: true));
   }
 
   void _queueShiftSave({
@@ -115,9 +146,10 @@ class DeliveryService {
     required DateTime date,
     required DeliveryShift shift,
     required double deliveredQty,
+    double? plannedQty,
   }) {
-    final plannedQty = customer.plannedQtyForShift(shift);
-    if (plannedQty <= 0 && deliveredQty <= 0) {
+    final resolvedPlannedQty = plannedQty ?? customer.plannedQtyForShift(shift);
+    if (resolvedPlannedQty <= 0 && deliveredQty <= 0) {
       return;
     }
 
@@ -128,6 +160,7 @@ class DeliveryService {
       shift: shift,
       date: date,
       deliveredQty: deliveredQty,
+      plannedQty: resolvedPlannedQty,
     );
 
     batch.set(
@@ -140,23 +173,45 @@ class DeliveryService {
   List<DeliveryRecord> _mapDeliveries(
     QuerySnapshot<Map<String, dynamic>> snapshot,
   ) {
-    final records = snapshot.docs.map(DeliveryRecord.fromFirestore).toList()
-      ..sort((first, second) {
-        final byDate = first.date.compareTo(second.date);
-        if (byDate != 0) {
-          return byDate;
-        }
-
-        final byCustomer = first.customerName.toLowerCase().compareTo(
-              second.customerName.toLowerCase(),
-            );
-        if (byCustomer != 0) {
-          return byCustomer;
-        }
-
-        return first.shift.value.compareTo(second.shift.value);
-      });
+    final records = snapshot.docs.map(DeliveryRecord.fromFirestore).toList();
+    _sortDeliveries(records);
 
     return records;
+  }
+
+  void _sortDeliveries(List<DeliveryRecord> records) {
+    records.sort((first, second) {
+      final byDate = first.date.compareTo(second.date);
+      if (byDate != 0) {
+        return byDate;
+      }
+
+      final byCustomer = first.customerName.toLowerCase().compareTo(
+        second.customerName.toLowerCase(),
+      );
+      if (byCustomer != 0) {
+        return byCustomer;
+      }
+
+      final byShift = _shiftSortIndex(
+        first.shift,
+      ).compareTo(_shiftSortIndex(second.shift));
+      if (byShift != 0) {
+        return byShift;
+      }
+
+      return first.productName.toLowerCase().compareTo(
+        second.productName.toLowerCase(),
+      );
+    });
+  }
+
+  int _shiftSortIndex(DeliveryShift shift) {
+    switch (shift) {
+      case DeliveryShift.morning:
+        return 0;
+      case DeliveryShift.evening:
+        return 1;
+    }
   }
 }

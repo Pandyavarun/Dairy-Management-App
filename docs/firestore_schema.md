@@ -36,6 +36,23 @@ Document ID: auto ID
   "eveningQty": 1.0,
   "assignedDeliveryBoyId": "uid_123",
   "ratePerLiter": 62.0,
+  "subscriptions": [
+    {
+      "id": "milk_morning",
+      "productId": "milk",
+      "productName": "Milk",
+      "unitLabel": "L",
+      "quantity": 2.0,
+      "rate": 62.0,
+      "shift": "morning",
+      "frequencyType": "daily",
+      "startDate": "Timestamp",
+      "intervalDays": 1,
+      "weekdays": [],
+      "isActive": true,
+      "notes": ""
+    }
+  ],
   "isActive": true,
   "createdAt": "Timestamp",
   "updatedAt": "Timestamp"
@@ -44,12 +61,13 @@ Document ID: auto ID
 
 Notes:
 
-- `ratePerLiter` is an inferred field added because billing needs an amount calculation
-- if you prefer a single global milk rate, this can move into a `settings/pricing` document later
+- `subscriptions` is the source of truth for recurring customer delivery plans
+- `morningQty`, `eveningQty`, and `ratePerLiter` are kept as derived compatibility fields
+- each subscription can be daily, alternate days, every X days, or weekly
 
 ## 3. `deliveries`
 
-Document ID recommendation: `{customerId}_{dateKey}_{shift}`
+Document ID recommendation: `{customerId}_{dateKey}_{shift}_{subscriptionId}`
 
 ```json
 {
@@ -60,6 +78,10 @@ Document ID recommendation: `{customerId}_{dateKey}_{shift}`
   "dateKey": "2026-03-28",
   "monthKey": "2026-03",
   "shift": "morning",
+  "subscriptionId": "milk_morning",
+  "productId": "milk",
+  "productName": "Milk",
+  "unitLabel": "L",
   "plannedQty": 2.0,
   "deliveredQty": 2.0,
   "ratePerLiter": 62.0,
@@ -75,7 +97,41 @@ Why top-level `deliveries`:
 - easy monthly billing queries by `customerId + monthKey`
 - easy delivery-boy queries by `deliveryBoyId + dateKey`
 
-## 4. `payments`
+## 4. `customer_leaves`
+
+Document ID: auto ID
+
+```json
+{
+  "customerId": "customer_123",
+  "customerName": "Anita Sharma",
+  "startDate": "Timestamp",
+  "endDate": "Timestamp",
+  "startDateKey": "2026-03-28",
+  "endDateKey": "2026-03-30",
+  "morningOff": true,
+  "eveningOff": false,
+  "productTargets": [
+    {
+      "productId": "milk",
+      "productName": "Milk",
+      "shift": "morning"
+    }
+  ],
+  "note": "Vacation",
+  "createdBy": "admin_uid",
+  "isActive": true,
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
+}
+```
+
+Notes:
+
+- when `productTargets` is empty, the leave applies to all products in the selected shifts
+- when `productTargets` contains entries, only those product and shift combinations are paused
+- old leave records without `productTargets` still behave as all-products leave
+## 5. `payments`
 
 Document ID: auto ID
 
@@ -91,7 +147,7 @@ Document ID: auto ID
 }
 ```
 
-## 5. `vendor_purchases`
+## 6. `vendor_purchases`
 
 Document ID: auto ID
 
@@ -107,7 +163,29 @@ Document ID: auto ID
 }
 ```
 
-## 6. `settings`
+## 7. `products`
+
+Document ID: auto ID
+
+```json
+{
+  "name": "Milk",
+  "unitLabel": "L",
+  "defaultRate": 62.0,
+  "isActive": true,
+  "notes": "Standard cow milk",
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
+}
+```
+
+Notes:
+
+- the product catalog is managed by the admin from the app
+- current route planning and delivery totals are still based on milk deliveries
+- monthly bills now show product-wise summarized totals instead of day-by-day rows
+
+## 8. `settings`
 
 Suggested document: `settings/app`
 

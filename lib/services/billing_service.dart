@@ -12,9 +12,9 @@ class BillingService {
     required CustomerService customerService,
     required DeliveryService deliveryService,
     required PaymentService paymentService,
-  })  : _customerService = customerService,
-        _deliveryService = deliveryService,
-        _paymentService = paymentService;
+  }) : _customerService = customerService,
+       _deliveryService = deliveryService,
+       _paymentService = paymentService;
 
   final CustomerService _customerService;
   final DeliveryService _deliveryService;
@@ -70,7 +70,9 @@ class BillingService {
   }) {
     final deliveriesByCustomer = <String, List<DeliveryRecord>>{};
     for (final delivery in deliveries) {
-      deliveriesByCustomer.putIfAbsent(delivery.customerId, () => []).add(delivery);
+      deliveriesByCustomer
+          .putIfAbsent(delivery.customerId, () => [])
+          .add(delivery);
     }
 
     final paymentsByCustomer = <String, List<PaymentRecord>>{};
@@ -82,25 +84,28 @@ class BillingService {
       for (final customer in customers) customer.id: customer,
     };
 
-    final customerIds = <String>{
-      ...customerMap.keys,
-      ...deliveriesByCustomer.keys,
-      ...paymentsByCustomer.keys,
-    }.toList()
-      ..sort((first, second) {
-        final firstCustomer = customerMap[first];
-        final secondCustomer = customerMap[second];
+    final customerIds =
+        <String>{
+          ...customerMap.keys,
+          ...deliveriesByCustomer.keys,
+          ...paymentsByCustomer.keys,
+        }.toList()..sort((first, second) {
+          final firstCustomer = customerMap[first];
+          final secondCustomer = customerMap[second];
 
-        return (firstCustomer?.name ?? first).toLowerCase().compareTo(
-              (secondCustomer?.name ?? second).toLowerCase(),
-            );
-      });
+          return (firstCustomer?.name ?? first).toLowerCase().compareTo(
+            (secondCustomer?.name ?? second).toLowerCase(),
+          );
+        });
 
     return customerIds.map((customerId) {
-      final customer = customerMap[customerId] ??
+      final customer =
+          customerMap[customerId] ??
           Customer(
             id: customerId,
-            name: deliveriesByCustomer[customerId]?.first.customerName ?? 'Unknown Customer',
+            name:
+                deliveriesByCustomer[customerId]?.first.customerName ??
+                'Unknown Customer',
             phone: '',
             address: '',
             morningQty: 0,
@@ -109,12 +114,14 @@ class BillingService {
             ratePerLiter: deliveriesByCustomer[customerId]?.isNotEmpty ?? false
                 ? deliveriesByCustomer[customerId]!.first.ratePerLiter
                 : 0,
+            subscriptions: const [],
           );
 
       return CustomerBill(
         customer: customer,
         monthKey: AppDateFormatter.monthKey(month),
-        deliveries: deliveriesByCustomer[customerId] ?? const <DeliveryRecord>[],
+        deliveries:
+            deliveriesByCustomer[customerId] ?? const <DeliveryRecord>[],
         payments: paymentsByCustomer[customerId] ?? const <PaymentRecord>[],
       );
     }).toList();

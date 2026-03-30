@@ -106,6 +106,7 @@ service cloud.firestore {
             'eveningQty',
             'assignedDeliveryBoyId',
             'ratePerLiter',
+            'subscriptions',
             'isActive',
             'createdAt',
             'updatedAt',
@@ -130,6 +131,9 @@ service cloud.firestore {
           && data.eveningQty >= 0
           && deliveryBoyExists(data.assignedDeliveryBoyId)
           && optionalNumber(data, 'ratePerLiter')
+          && (!('subscriptions' in data)
+              || (data.subscriptions is list
+                  && data.subscriptions.size() <= 200))
           && optionalBool(data, 'isActive')
           && optionalTimestamp(data, 'createdAt')
           && optionalTimestamp(data, 'updatedAt');
@@ -163,6 +167,10 @@ service cloud.firestore {
             'dateKey',
             'monthKey',
             'shift',
+            'subscriptionId',
+            'productId',
+            'productName',
+            'unitLabel',
             'plannedQty',
             'deliveredQty',
             'ratePerLiter',
@@ -196,6 +204,10 @@ service cloud.firestore {
           && data.monthKey is string
           && data.monthKey.size() > 0
           && (data.shift == 'morning' || data.shift == 'evening')
+          && optionalString(data, 'subscriptionId')
+          && optionalString(data, 'productId')
+          && optionalString(data, 'productName')
+          && optionalString(data, 'unitLabel')
           && data.plannedQty is number
           && data.plannedQty >= 0
           && data.deliveredQty is number
@@ -284,6 +296,125 @@ service cloud.firestore {
           && data.createdBy.size() > 0;
     }
 
+    function isValidCustomerLeaveData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'customerId',
+            'customerName',
+            'startDate',
+            'endDate',
+            'startDateKey',
+            'endDateKey',
+            'morningOff',
+            'eveningOff',
+            'productTargets',
+            'note',
+            'createdBy',
+            'isActive',
+            'createdAt',
+            'updatedAt',
+          ])
+          && data.keys().hasAll([
+            'customerId',
+            'customerName',
+            'startDate',
+            'endDate',
+            'startDateKey',
+            'endDateKey',
+            'morningOff',
+            'eveningOff',
+            'createdBy',
+          ])
+          && data.customerId is string
+          && data.customerId.size() > 0
+          && exists(customerPath(data.customerId))
+          && data.customerName is string
+          && data.customerName == customerData(data.customerId).name
+          && data.startDate is timestamp
+          && data.endDate is timestamp
+          && data.startDate <= data.endDate
+          && data.startDateKey is string
+          && data.startDateKey.size() > 0
+          && data.endDateKey is string
+          && data.endDateKey.size() > 0
+          && data.morningOff is bool
+          && data.eveningOff is bool
+          && (data.morningOff || data.eveningOff)
+          && (!('productTargets' in data)
+              || (data.productTargets is list
+                  && data.productTargets.size() <= 100))
+          && data.createdBy is string
+          && data.createdBy.size() > 0
+          && optionalString(data, 'note')
+          && optionalBool(data, 'isActive')
+          && optionalTimestamp(data, 'createdAt')
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
+    function isValidProductData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'name',
+            'unitLabel',
+            'defaultRate',
+            'isActive',
+            'notes',
+            'createdAt',
+            'updatedAt',
+          ])
+          && data.keys().hasAll([
+            'name',
+            'unitLabel',
+            'defaultRate',
+            'isActive',
+          ])
+          && data.name is string
+          && data.name.size() > 0
+          && data.unitLabel is string
+          && data.unitLabel.size() > 0
+          && data.defaultRate is number
+          && data.defaultRate >= 0
+          && data.isActive is bool
+          && optionalString(data, 'notes')
+          && optionalTimestamp(data, 'createdAt')
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
+    function isValidDairyProfileData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'dairyName',
+            'ownerName',
+            'phone',
+            'email',
+            'address',
+            'paymentQrBase64',
+            'bankName',
+            'accountHolderName',
+            'accountNumber',
+            'ifscCode',
+            'branchName',
+            'updatedAt',
+          ])
+          && optionalString(data, 'dairyName')
+          && optionalString(data, 'ownerName')
+          && optionalString(data, 'phone')
+          && optionalString(data, 'email')
+          && optionalString(data, 'address')
+          && optionalString(data, 'bankName')
+          && optionalString(data, 'accountHolderName')
+          && optionalString(data, 'accountNumber')
+          && optionalString(data, 'ifscCode')
+          && optionalString(data, 'branchName')
+          && (!('paymentQrBase64' in data)
+              || (data.paymentQrBase64 is string
+                  && data.paymentQrBase64.size() < 1000000))
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
     function isDeliveryBoyDeliveryWrite() {
       let data = request.resource.data;
 
@@ -292,8 +423,7 @@ service cloud.firestore {
           && data.deliveryBoyId == request.auth.uid
           && data.updatedBy == request.auth.uid
           && isActiveCustomerForDeliveryBoy(data.customerId, request.auth.uid)
-          && data.customerName == customerData(data.customerId).name
-          && data.plannedQty == plannedQtyForShift(data.customerId, data.shift);
+          && data.customerName == customerData(data.customerId).name;
     }
 
     match /users/{userId} {
@@ -330,6 +460,26 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create, update: if isAdmin() && isValidVendorPurchaseData();
       allow delete: if isAdmin();
+    }
+
+    match /customer_leaves/{leaveId} {
+      allow read: if isAdmin() || isDeliveryBoy();
+      allow create, update: if isAdmin() && isValidCustomerLeaveData();
+      allow delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if isAdmin() || isDeliveryBoy();
+      allow create, update: if isAdmin() && isValidProductData();
+      allow delete: if isAdmin();
+    }
+
+    match /app_settings/{documentId} {
+      allow read: if isAdmin() && documentId == 'dairy_profile';
+      allow create, update: if isAdmin()
+          && documentId == 'dairy_profile'
+          && isValidDairyProfileData();
+      allow delete: if isAdmin() && documentId == 'dairy_profile';
     }
 
     match /settings/{documentId} {

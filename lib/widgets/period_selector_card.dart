@@ -18,49 +18,72 @@ class PeriodSelectorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: onPrevious,
-              icon: const Icon(Icons.chevron_left_rounded),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: onPrevious,
+            icon: const Icon(Icons.chevron_left_rounded, color: Color(0xFF47685A)),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF47685A).withValues(alpha: 0.05),
             ),
-            Expanded(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: onTap,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.labelMedium,
+          ),
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                        letterSpacing: 0.5,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                        textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2D312D),
                       ),
-                    ],
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ),
-            IconButton(
-              onPressed: onNext,
-              icon: const Icon(Icons.chevron_right_rounded),
+          ),
+          IconButton(
+            onPressed: onNext,
+            icon: const Icon(Icons.chevron_right_rounded, color: Color(0xFF47685A)),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF47685A).withValues(alpha: 0.05),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

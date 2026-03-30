@@ -26,3 +26,17 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - base/res/drawable-mdpi/src_assets_images_dashboard_deliveryperson.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_productbooking.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_leavemang.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_bottle.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_customerhelpdesk.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_banner.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_customers.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_saledelivery.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_salesrequ.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_invoice.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_paymentreport.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_buyproductdashboard.webp
+    - base/res/drawable-mdpi/src_assets_images_dashboard_salereport.webp

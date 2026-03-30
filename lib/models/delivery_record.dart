@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../config/app_date_formatter.dart';
 import 'customer.dart';
+import 'customer_subscription.dart';
 import 'delivery_shift.dart';
 
 class DeliveryRecord {
@@ -14,6 +15,10 @@ class DeliveryRecord {
     required this.dateKey,
     required this.monthKey,
     required this.shift,
+    required this.subscriptionId,
+    required this.productId,
+    required this.productName,
+    required this.unitLabel,
     required this.plannedQty,
     required this.deliveredQty,
     required this.ratePerLiter,
@@ -29,6 +34,10 @@ class DeliveryRecord {
   final String dateKey;
   final String monthKey;
   final DeliveryShift shift;
+  final String subscriptionId;
+  final String productId;
+  final String productName;
+  final String unitLabel;
   final double plannedQty;
   final double deliveredQty;
   final double ratePerLiter;
@@ -43,6 +52,8 @@ class DeliveryRecord {
   ) {
     final data = snapshot.data() ?? <String, dynamic>{};
     final timestamp = data['date'] as Timestamp?;
+    final shift = DeliveryShiftX.fromValue(data['shift'] as String?);
+    final productId = data['productId'] as String? ?? 'legacy_milk';
 
     return DeliveryRecord(
       id: snapshot.id,
@@ -52,12 +63,55 @@ class DeliveryRecord {
       date: timestamp?.toDate() ?? DateTime.now(),
       dateKey: data['dateKey'] as String? ?? '',
       monthKey: data['monthKey'] as String? ?? '',
-      shift: DeliveryShiftX.fromValue(data['shift'] as String?),
+      shift: shift,
+      subscriptionId:
+          data['subscriptionId'] as String? ?? '${productId}_${shift.value}',
+      productId: productId,
+      productName: data['productName'] as String? ?? 'Milk',
+      unitLabel: data['unitLabel'] as String? ?? 'L',
       plannedQty: _asDouble(data['plannedQty']),
       deliveredQty: _asDouble(data['deliveredQty']),
       ratePerLiter: _asDouble(data['ratePerLiter']),
       status: data['status'] as String? ?? 'pending',
       updatedBy: data['updatedBy'] as String? ?? '',
+    );
+  }
+
+  static DeliveryRecord createForSubscription({
+    required Customer customer,
+    required CustomerSubscription subscription,
+    required String deliveryBoyId,
+    required String updatedBy,
+    required DateTime date,
+    required double deliveredQty,
+    double? plannedQty,
+  }) {
+    final normalizedDate = AppDateFormatter.normalizeDate(date);
+    final resolvedPlannedQty = plannedQty ?? subscription.quantity;
+
+    return DeliveryRecord(
+      id: documentId(
+        customerId: customer.id,
+        dateKey: AppDateFormatter.dateKey(normalizedDate),
+        shift: subscription.shift,
+        subscriptionId: subscription.id,
+      ),
+      customerId: customer.id,
+      customerName: customer.name,
+      deliveryBoyId: deliveryBoyId,
+      date: normalizedDate,
+      dateKey: AppDateFormatter.dateKey(normalizedDate),
+      monthKey: AppDateFormatter.monthKey(normalizedDate),
+      shift: subscription.shift,
+      subscriptionId: subscription.id,
+      productId: subscription.productId,
+      productName: subscription.productName,
+      unitLabel: subscription.unitLabel,
+      plannedQty: resolvedPlannedQty,
+      deliveredQty: deliveredQty,
+      ratePerLiter: subscription.rate,
+      status: deliveredQty > 0 ? 'delivered' : 'pending',
+      updatedBy: updatedBy,
     );
   }
 
@@ -68,28 +122,23 @@ class DeliveryRecord {
     required DeliveryShift shift,
     required DateTime date,
     required double deliveredQty,
+    double? plannedQty,
   }) {
-    final normalizedDate = AppDateFormatter.normalizeDate(date);
-    final plannedQty = customer.plannedQtyForShift(shift);
-
-    return DeliveryRecord(
-      id: documentId(
-        customerId: customer.id,
-        dateKey: AppDateFormatter.dateKey(normalizedDate),
-        shift: shift,
-      ),
-      customerId: customer.id,
-      customerName: customer.name,
-      deliveryBoyId: deliveryBoyId,
-      date: normalizedDate,
-      dateKey: AppDateFormatter.dateKey(normalizedDate),
-      monthKey: AppDateFormatter.monthKey(normalizedDate),
+    final fallbackSubscription = CustomerSubscription.createLegacyMilk(
+      id: 'legacy_${shift.value}',
+      quantity: plannedQty ?? customer.plannedQtyForShift(shift),
+      rate: customer.ratePerLiter,
       shift: shift,
-      plannedQty: plannedQty,
-      deliveredQty: deliveredQty,
-      ratePerLiter: customer.ratePerLiter,
-      status: deliveredQty > 0 ? 'delivered' : 'pending',
+    );
+
+    return createForSubscription(
+      customer: customer,
+      subscription: fallbackSubscription,
+      deliveryBoyId: deliveryBoyId,
       updatedBy: updatedBy,
+      date: date,
+      deliveredQty: deliveredQty,
+      plannedQty: plannedQty,
     );
   }
 
@@ -102,6 +151,10 @@ class DeliveryRecord {
     String? dateKey,
     String? monthKey,
     DeliveryShift? shift,
+    String? subscriptionId,
+    String? productId,
+    String? productName,
+    String? unitLabel,
     double? plannedQty,
     double? deliveredQty,
     double? ratePerLiter,
@@ -117,6 +170,10 @@ class DeliveryRecord {
       dateKey: dateKey ?? this.dateKey,
       monthKey: monthKey ?? this.monthKey,
       shift: shift ?? this.shift,
+      subscriptionId: subscriptionId ?? this.subscriptionId,
+      productId: productId ?? this.productId,
+      productName: productName ?? this.productName,
+      unitLabel: unitLabel ?? this.unitLabel,
       plannedQty: plannedQty ?? this.plannedQty,
       deliveredQty: deliveredQty ?? this.deliveredQty,
       ratePerLiter: ratePerLiter ?? this.ratePerLiter,
@@ -134,6 +191,10 @@ class DeliveryRecord {
       'dateKey': dateKey,
       'monthKey': monthKey,
       'shift': shift.value,
+      'subscriptionId': subscriptionId,
+      'productId': productId,
+      'productName': productName,
+      'unitLabel': unitLabel,
       'plannedQty': plannedQty,
       'deliveredQty': deliveredQty,
       'ratePerLiter': ratePerLiter,
@@ -147,8 +208,12 @@ class DeliveryRecord {
     required String customerId,
     required String dateKey,
     required DeliveryShift shift,
+    required String subscriptionId,
   }) {
-    return '${customerId}_${dateKey}_${shift.value}';
+    return '$customerId'
+        '_$dateKey'
+        '_${shift.value}'
+        '_$subscriptionId';
   }
 
   static double _asDouble(Object? value) {

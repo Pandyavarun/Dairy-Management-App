@@ -26,6 +26,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
       initialDate: _selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF47685A),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF2D312D),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
@@ -41,6 +53,18 @@ class _ReportsScreenState extends State<ReportsScreen> {
       initialDate: _selectedMonth,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF47685A),
+              onPrimary: Colors.white,
+              onSurface: Color(0xFF2D312D),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (pickedDate != null) {
@@ -55,8 +79,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final reportService = context.read<ReportService>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F4F1),
       appBar: AppBar(
-        title: const Text('Reports'),
+        title: const Text(
+          'Reports',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+        ),
+        centerTitle: true,
+        backgroundColor: const Color(0xFF47685A),
+        foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Object>>(
         future: Future.wait<Object>([
@@ -72,10 +103,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
               snapshot.hasData ? snapshot.data![2] as List<CustomerBill> : const <CustomerBill>[];
 
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
             children: [
+                  const _SectionHeader(
+                    icon: Icons.today_rounded,
+                    title: 'Daily Summary',
+                  ),
+                  const SizedBox(height: 12),
               PeriodSelectorCard(
-                title: 'Daily Summary Date',
+                title: 'Daily Date',
                 label: AppDateFormatter.fullDateLabel(_selectedDate),
                 onPrevious: () {
                   setState(() {
@@ -90,12 +126,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 onTap: _pickDate,
               ),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
+              Row(
                 children: [
-                  SizedBox(
-                    width: 220,
+                  Expanded(
                     child: SummaryMetricCard(
                       title: 'Daily Milk',
                       value: dailySummary == null
@@ -103,8 +136,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           : '${dailySummary.totalMilk.toStringAsFixed(1)} L',
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: SummaryMetricCard(
                       title: 'Daily Sales',
                       value: dailySummary == null
@@ -112,18 +145,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           : AppCurrencyFormatter.amount(dailySummary.totalAmount),
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
-                    child: SummaryMetricCard(
-                      title: 'Daily Entries',
-                      value: dailySummary?.totalEntries.toString() ?? '--',
-                    ),
-                  ),
                 ],
               ),
-              const SizedBox(height: 20),
-              PeriodSelectorCard(
+              const SizedBox(height: 12),
+              SummaryMetricCard(
+                title: 'Daily Entries Recorded',
+                value: dailySummary?.totalEntries.toString() ?? '--',
+              ),
+              const SizedBox(height: 32),
+              const _SectionHeader(
+                icon: Icons.calendar_month_rounded,
                 title: 'Monthly Summary',
+              ),
+              const SizedBox(height: 12),
+              PeriodSelectorCard(
+                title: 'Monthly Period',
                 label: AppDateFormatter.monthYearLabel(_selectedMonth),
                 onPrevious: () {
                   setState(() {
@@ -138,12 +174,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 onTap: _pickMonth,
               ),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
+              Row(
                 children: [
-                  SizedBox(
-                    width: 220,
+                  Expanded(
                     child: SummaryMetricCard(
                       title: 'Monthly Milk',
                       value: monthlySummary == null
@@ -151,8 +184,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           : '${monthlySummary.totalMilk.toStringAsFixed(1)} L',
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: SummaryMetricCard(
                       title: 'Monthly Sales',
                       value: monthlySummary == null
@@ -160,19 +193,23 @@ class _ReportsScreenState extends State<ReportsScreen> {
                           : AppCurrencyFormatter.amount(monthlySummary.totalSalesAmount),
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
                     child: SummaryMetricCard(
-                      title: 'Payments Received',
+                      title: 'Payments Recv.',
                       value: monthlySummary == null
                           ? '--'
                           : AppCurrencyFormatter.amount(monthlySummary.totalPaymentsReceived),
                     ),
                   ),
-                  SizedBox(
-                    width: 220,
+                  const SizedBox(width: 12),
+                  Expanded(
                     child: SummaryMetricCard(
-                      title: 'Pending Dues',
+                      title: 'Net Dues',
                       value: monthlySummary == null
                           ? '--'
                           : AppCurrencyFormatter.amount(monthlySummary.pendingDues),
@@ -180,43 +217,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Pending Dues',
-                style: Theme.of(context).textTheme.titleLarge,
+              const SizedBox(height: 32),
+              _SectionHeader(
+                icon: Icons.warning_amber_rounded,
+                title: 'Pending Dues (${pendingBills.length})',
+                titleColor: Colors.red.shade700,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               if (snapshot.connectionState == ConnectionState.waiting)
-                const Center(child: CircularProgressIndicator())
+                const Center(child: CircularProgressIndicator(color: Color(0xFF47685A)))
               else if (snapshot.hasError)
                 const _ReportMessageCard(
+                  icon: Icons.error_outline_rounded,
                   title: 'Unable to load reports',
                   description: 'Please try again shortly.',
                 )
               else if (pendingBills.isEmpty)
                 const _ReportMessageCard(
+                  icon: Icons.check_circle_outline_rounded,
                   title: 'No pending dues',
                   description: 'All customer balances are clear for this month.',
                 )
               else
                 ...pendingBills.map(
-                  (bill) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Card(
-                      child: ListTile(
-                        title: Text(bill.customer.name),
-                        subtitle: Text(
-                          'Milk ${bill.totalMilk.toStringAsFixed(1)} L • Paid ${AppCurrencyFormatter.amount(bill.totalPayments)}',
-                        ),
-                        trailing: Text(
-                          AppCurrencyFormatter.amount(bill.dueAmount),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  (bill) => _PendingDueCard(bill: bill),
                 ),
             ],
           );
@@ -226,34 +250,125 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 }
 
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+    this.titleColor,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color? titleColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: titleColor ?? const Color(0xFF47685A)),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: titleColor ?? const Color(0xFF2D312D),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PendingDueCard extends StatelessWidget {
+  const _PendingDueCard({required this.bill});
+
+  final CustomerBill bill;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.money_off_rounded, color: Colors.red, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    bill.customer.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  Text(
+                    'Milk ${bill.totalMilk.toStringAsFixed(1)} L • Paid ${AppCurrencyFormatter.amount(bill.totalPayments)}',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              AppCurrencyFormatter.amount(bill.dueAmount),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.red),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ReportMessageCard extends StatelessWidget {
   const _ReportMessageCard({
+    required this.icon,
     required this.title,
     required this.description,
   });
 
+  final IconData icon;
   final String title;
   final String description;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 48, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          ),
+        ],
       ),
     );
   }
