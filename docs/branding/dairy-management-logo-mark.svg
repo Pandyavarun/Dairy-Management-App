@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Dairy Management App Icon Mark</title>
+  <desc id="desc">Square app icon mark with stylized milk drop and leaf.</desc>
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EDF6F0"/>
+      <stop offset="100%" stop-color="#E2F0E8"/>
+    </linearGradient>
+    <linearGradient id="dropGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7FC0A2"/>
+      <stop offset="100%" stop-color="#47685A"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#B8DD7E"/>
+      <stop offset="100%" stop-color="#6BAD4B"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="220" fill="url(#bgGrad)"/>
+
+  <rect x="120" y="120" width="784" height="784" rx="180" fill="#FFFFFF"/>
+
+  <path d="M512 240 C420 372 316 489 316 621 C316 750 404 836 512 836 C620 836 708 750 708 621 C708 489 604 372 512 240 Z" fill="url(#dropGrad)"/>
+
+  <ellipse cx="512" cy="650" rx="146" ry="118" fill="#FFFFFF" fill-opacity="0.95"/>
+
+  <path d="M608 330 C677 330 728 387 728 454 C663 448 609 396 608 330 Z" fill="url(#leafGrad)"/>
+  <path d="M622 350 C634 391 671 429 712 442" stroke="#4C8A34" stroke-width="14" stroke-linecap="round" fill="none"/>
+</svg>
