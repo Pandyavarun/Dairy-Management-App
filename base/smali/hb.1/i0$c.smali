@@ -1,0 +1,36 @@
+.class public final Lhb/i0$c;
+.super Lmb/M;
+.source "r8-map-id-02f95839ae4167eb4c00fe84895795a247f99e61b0b3e7dcaac951cd1062bb38"
+
+
+# annotations
+.annotation system Ldalvik/annotation/EnclosingClass;
+    value = Lhb/i0;
+.end annotation
+
+.annotation system Ldalvik/annotation/InnerClass;
+    accessFlags = 0x19
+    name = "c"
+.end annotation
+
+
+# instance fields
+.field public c:J
+
+
+# direct methods
+.method public constructor <init>(J)V
+    .locals 0
+
+    .line 1
+    invoke-direct {p0}, Lmb/M;-><init>()V
+
+    .line 2
+    .line 3
+    .line 4
+    iput-wide p1, p0, Lhb/i0$c;->c:J
+
+    .line 5
+    .line 6
+    return-void
+.end method

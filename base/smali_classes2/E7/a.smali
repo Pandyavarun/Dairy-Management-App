@@ -1,0 +1,56 @@
+.class public final synthetic LE7/a;
+.super Ljava/lang/Object;
+.source "r8-map-id-02f95839ae4167eb4c00fe84895795a247f99e61b0b3e7dcaac951cd1062bb38"
+
+# interfaces
+.implements Lcom/google/firebase/inappmessaging/FirebaseInAppMessagingDisplay;
+
+
+# instance fields
+.field public final synthetic n:LE7/b;
+
+.field public final synthetic o:Landroid/app/Activity;
+
+
+# direct methods
+.method public synthetic constructor <init>(LE7/b;Landroid/app/Activity;)V
+    .locals 0
+
+    .line 1
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    .line 2
+    .line 3
+    .line 4
+    iput-object p1, p0, LE7/a;->n:LE7/b;
+
+    .line 5
+    .line 6
+    iput-object p2, p0, LE7/a;->o:Landroid/app/Activity;
+
+    .line 7
+    .line 8
+    return-void
+.end method
+
+
+# virtual methods
+.method public final displayMessage(LP7/i;LC7/r;)V
+    .locals 2
+
+    .line 1
+    iget-object v0, p0, LE7/a;->n:LE7/b;
+
+    .line 2
+    .line 3
+    iget-object v1, p0, LE7/a;->o:Landroid/app/Activity;
+
+    .line 4
+    .line 5
+    invoke-static {v0, v1, p1, p2}, LE7/b;->a(LE7/b;Landroid/app/Activity;LP7/i;LC7/r;)V
+
+    .line 6
+    .line 7
+    .line 8
+    return-void
+.end method

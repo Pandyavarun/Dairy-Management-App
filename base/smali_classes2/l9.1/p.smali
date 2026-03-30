@@ -1,0 +1,411 @@
+.class public final Ll9/p;
+.super Ljava/lang/Object;
+.source "r8-map-id-02f95839ae4167eb4c00fe84895795a247f99e61b0b3e7dcaac951cd1062bb38"
+
+
+# annotations
+.annotation system Ldalvik/annotation/MemberClasses;
+    value = {
+        Ll9/p$a;
+    }
+.end annotation
+
+
+# static fields
+.field public static final d:Ll9/p$a;
+
+.field private static e:I
+
+
+# instance fields
+.field private final a:Lcom/facebook/react/uimanager/A0;
+
+.field private b:Ll9/a;
+
+.field private c:Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;
+
+
+# direct methods
+.method static constructor <clinit>()V
+    .locals 2
+
+    .line 1
+    new-instance v0, Ll9/p$a;
+
+    .line 2
+    .line 3
+    const/4 v1, 0x0
+
+    .line 4
+    invoke-direct {v0, v1}, Ll9/p$a;-><init>(Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+
+    .line 5
+    .line 6
+    .line 7
+    sput-object v0, Ll9/p;->d:Ll9/p$a;
+
+    .line 8
+    .line 9
+    const/4 v0, -0x1
+
+    .line 10
+    sput v0, Ll9/p;->e:I
+
+    .line 11
+    .line 12
+    return-void
+.end method
+
+.method public constructor <init>(Lcom/facebook/react/uimanager/A0;)V
+    .locals 2
+
+    .line 1
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    .line 2
+    .line 3
+    .line 4
+    iput-object p1, p0, Ll9/p;->a:Lcom/facebook/react/uimanager/A0;
+
+    .line 5
+    .line 6
+    new-instance p1, Ll9/a;
+
+    .line 7
+    .line 8
+    const-wide/16 v0, 0x0
+
+    .line 9
+    .line 10
+    invoke-direct {p1, v0, v1, v0, v1}, Ll9/a;-><init>(DD)V
+
+    .line 11
+    .line 12
+    .line 13
+    iput-object p1, p0, Ll9/p;->b:Ll9/a;
+
+    .line 14
+    .line 15
+    return-void
+.end method
+
+.method public static synthetic a(Ll9/p;Landroid/view/ViewGroup;)V
+    .locals 0
+
+    .line 1
+    invoke-static {p0, p1}, Ll9/p;->c(Ll9/p;Landroid/view/ViewGroup;)V
+
+    .line 2
+    .line 3
+    .line 4
+    return-void
+.end method
+
+.method private static final c(Ll9/p;Landroid/view/ViewGroup;)V
+    .locals 0
+
+    .line 1
+    invoke-direct {p0, p1}, Ll9/p;->e(Landroid/view/ViewGroup;)V
+
+    .line 2
+    .line 3
+    .line 4
+    return-void
+.end method
+
+.method private final e(Landroid/view/ViewGroup;)V
+    .locals 5
+
+    .line 1
+    if-nez p1, :cond_0
+
+    .line 2
+    .line 3
+    goto :goto_0
+
+    .line 4
+    :cond_0
+    new-instance v0, Ll9/a;
+
+    .line 5
+    .line 6
+    invoke-virtual {p1}, Landroid/view/View;->getWidth()I
+
+    .line 7
+    .line 8
+    .line 9
+    move-result v1
+
+    .line 10
+    int-to-float v1, v1
+
+    .line 11
+    invoke-static {v1}, Li9/d;->a(F)D
+
+    .line 12
+    .line 13
+    .line 14
+    move-result-wide v1
+
+    .line 15
+    invoke-virtual {p1}, Landroid/view/View;->getHeight()I
+
+    .line 16
+    .line 17
+    .line 18
+    move-result p1
+
+    .line 19
+    int-to-float p1, p1
+
+    .line 20
+    invoke-static {p1}, Li9/d;->a(F)D
+
+    .line 21
+    .line 22
+    .line 23
+    move-result-wide v3
+
+    .line 24
+    invoke-direct {v0, v1, v2, v3, v4}, Ll9/a;-><init>(DD)V
+
+    .line 25
+    .line 26
+    .line 27
+    iget-object p1, p0, Ll9/p;->b:Ll9/a;
+
+    .line 28
+    .line 29
+    invoke-static {v0, p1}, LWa/m;->c(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    .line 30
+    .line 31
+    .line 32
+    move-result p1
+
+    .line 33
+    if-nez p1, :cond_1
+
+    .line 34
+    .line 35
+    iput-object v0, p0, Ll9/p;->b:Ll9/a;
+
+    .line 36
+    .line 37
+    iget-object p1, p0, Ll9/p;->a:Lcom/facebook/react/uimanager/A0;
+
+    .line 38
+    .line 39
+    invoke-static {}, Lcom/facebook/react/bridge/Arguments;->createMap()Lcom/facebook/react/bridge/WritableMap;
+
+    .line 40
+    .line 41
+    .line 42
+    move-result-object v1
+
+    .line 43
+    const-string v2, "height"
+
+    .line 44
+    .line 45
+    invoke-virtual {v0}, Ll9/a;->a()D
+
+    .line 46
+    .line 47
+    .line 48
+    move-result-wide v3
+
+    .line 49
+    invoke-interface {v1, v2, v3, v4}, Lcom/facebook/react/bridge/WritableMap;->putDouble(Ljava/lang/String;D)V
+
+    .line 50
+    .line 51
+    .line 52
+    const-string v2, "width"
+
+    .line 53
+    .line 54
+    invoke-virtual {v0}, Ll9/a;->b()D
+
+    .line 55
+    .line 56
+    .line 57
+    move-result-wide v3
+
+    .line 58
+    invoke-interface {v1, v2, v3, v4}, Lcom/facebook/react/bridge/WritableMap;->putDouble(Ljava/lang/String;D)V
+
+    .line 59
+    .line 60
+    .line 61
+    sget-object v0, LHa/y;->a:LHa/y;
+
+    .line 62
+    .line 63
+    const-string v0, "KeyboardController::windowDidResize"
+
+    .line 64
+    .line 65
+    invoke-static {p1, v0, v1}, Li9/g;->b(Lcom/facebook/react/uimanager/A0;Ljava/lang/String;Lcom/facebook/react/bridge/WritableMap;)V
+
+    .line 66
+    .line 67
+    .line 68
+    :cond_1
+    :goto_0
+    return-void
+.end method
+
+
+# virtual methods
+.method public final b()V
+    .locals 2
+
+    .line 1
+    iget-object v0, p0, Ll9/p;->a:Lcom/facebook/react/uimanager/A0;
+
+    .line 2
+    .line 3
+    if-eqz v0, :cond_0
+
+    .line 4
+    .line 5
+    sget v1, Ll9/p;->e:I
+
+    .line 6
+    .line 7
+    invoke-virtual {v0}, Ljava/lang/Object;->hashCode()I
+
+    .line 8
+    .line 9
+    .line 10
+    move-result v0
+
+    .line 11
+    if-eq v1, v0, :cond_0
+
+    .line 12
+    .line 13
+    iget-object v0, p0, Ll9/p;->a:Lcom/facebook/react/uimanager/A0;
+
+    .line 14
+    .line 15
+    invoke-virtual {v0}, Ljava/lang/Object;->hashCode()I
+
+    .line 16
+    .line 17
+    .line 18
+    move-result v0
+
+    .line 19
+    sput v0, Ll9/p;->e:I
+
+    .line 20
+    .line 21
+    iget-object v0, p0, Ll9/p;->a:Lcom/facebook/react/uimanager/A0;
+
+    .line 22
+    .line 23
+    invoke-static {v0}, Li9/f;->a(Lcom/facebook/react/bridge/ReactContext;)Landroid/view/ViewGroup;
+
+    .line 24
+    .line 25
+    .line 26
+    move-result-object v0
+
+    .line 27
+    invoke-direct {p0, v0}, Ll9/p;->e(Landroid/view/ViewGroup;)V
+
+    .line 28
+    .line 29
+    .line 30
+    new-instance v1, Ll9/o;
+
+    .line 31
+    .line 32
+    invoke-direct {v1, p0, v0}, Ll9/o;-><init>(Ll9/p;Landroid/view/ViewGroup;)V
+
+    .line 33
+    .line 34
+    .line 35
+    iput-object v1, p0, Ll9/p;->c:Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;
+
+    .line 36
+    .line 37
+    if-eqz v0, :cond_0
+
+    .line 38
+    .line 39
+    invoke-virtual {v0}, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;
+
+    .line 40
+    .line 41
+    .line 42
+    move-result-object v0
+
+    .line 43
+    if-eqz v0, :cond_0
+
+    .line 44
+    .line 45
+    iget-object v1, p0, Ll9/p;->c:Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;
+
+    .line 46
+    .line 47
+    invoke-virtual {v0, v1}, Landroid/view/ViewTreeObserver;->addOnGlobalLayoutListener(Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V
+
+    .line 48
+    .line 49
+    .line 50
+    :cond_0
+    return-void
+.end method
+
+.method public final d()V
+    .locals 2
+
+    .line 1
+    iget-object v0, p0, Ll9/p;->a:Lcom/facebook/react/uimanager/A0;
+
+    .line 2
+    .line 3
+    if-eqz v0, :cond_0
+
+    .line 4
+    .line 5
+    invoke-static {v0}, Li9/f;->a(Lcom/facebook/react/bridge/ReactContext;)Landroid/view/ViewGroup;
+
+    .line 6
+    .line 7
+    .line 8
+    move-result-object v0
+
+    .line 9
+    if-eqz v0, :cond_0
+
+    .line 10
+    .line 11
+    invoke-virtual {v0}, Landroid/view/View;->getViewTreeObserver()Landroid/view/ViewTreeObserver;
+
+    .line 12
+    .line 13
+    .line 14
+    move-result-object v0
+
+    .line 15
+    if-eqz v0, :cond_0
+
+    .line 16
+    .line 17
+    iget-object v1, p0, Ll9/p;->c:Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;
+
+    .line 18
+    .line 19
+    invoke-virtual {v0, v1}, Landroid/view/ViewTreeObserver;->removeOnGlobalLayoutListener(Landroid/view/ViewTreeObserver$OnGlobalLayoutListener;)V
+
+    .line 20
+    .line 21
+    .line 22
+    :cond_0
+    return-void
+.end method

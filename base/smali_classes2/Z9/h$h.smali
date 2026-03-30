@@ -1,0 +1,163 @@
+.class public final enum LZ9/h$h;
+.super Ljava/lang/Enum;
+.source "r8-map-id-02f95839ae4167eb4c00fe84895795a247f99e61b0b3e7dcaac951cd1062bb38"
+
+
+# annotations
+.annotation system Ldalvik/annotation/EnclosingClass;
+    value = LZ9/h;
+.end annotation
+
+.annotation system Ldalvik/annotation/InnerClass;
+    accessFlags = 0x4019
+    name = "h"
+.end annotation
+
+
+# static fields
+.field public static final enum n:LZ9/h$h;
+
+.field public static final enum o:LZ9/h$h;
+
+.field public static final enum p:LZ9/h$h;
+
+.field private static final synthetic q:[LZ9/h$h;
+
+
+# direct methods
+.method static constructor <clinit>()V
+    .locals 5
+
+    .line 1
+    new-instance v0, LZ9/h$h;
+
+    .line 2
+    .line 3
+    const-string v1, "ALPN_AND_NPN"
+
+    .line 4
+    .line 5
+    const/4 v2, 0x0
+
+    .line 6
+    invoke-direct {v0, v1, v2}, LZ9/h$h;-><init>(Ljava/lang/String;I)V
+
+    .line 7
+    .line 8
+    .line 9
+    sput-object v0, LZ9/h$h;->n:LZ9/h$h;
+
+    .line 10
+    .line 11
+    new-instance v1, LZ9/h$h;
+
+    .line 12
+    .line 13
+    const-string v2, "NPN"
+
+    .line 14
+    .line 15
+    const/4 v3, 0x1
+
+    .line 16
+    invoke-direct {v1, v2, v3}, LZ9/h$h;-><init>(Ljava/lang/String;I)V
+
+    .line 17
+    .line 18
+    .line 19
+    sput-object v1, LZ9/h$h;->o:LZ9/h$h;
+
+    .line 20
+    .line 21
+    new-instance v2, LZ9/h$h;
+
+    .line 22
+    .line 23
+    const-string v3, "NONE"
+
+    .line 24
+    .line 25
+    const/4 v4, 0x2
+
+    .line 26
+    invoke-direct {v2, v3, v4}, LZ9/h$h;-><init>(Ljava/lang/String;I)V
+
+    .line 27
+    .line 28
+    .line 29
+    sput-object v2, LZ9/h$h;->p:LZ9/h$h;
+
+    .line 30
+    .line 31
+    filled-new-array {v0, v1, v2}, [LZ9/h$h;
+
+    .line 32
+    .line 33
+    .line 34
+    move-result-object v0
+
+    .line 35
+    sput-object v0, LZ9/h$h;->q:[LZ9/h$h;
+
+    .line 36
+    .line 37
+    return-void
+.end method
+
+.method private constructor <init>(Ljava/lang/String;I)V
+    .locals 0
+
+    .line 1
+    invoke-direct {p0, p1, p2}, Ljava/lang/Enum;-><init>(Ljava/lang/String;I)V
+
+    .line 2
+    .line 3
+    .line 4
+    return-void
+.end method
+
+.method public static valueOf(Ljava/lang/String;)LZ9/h$h;
+    .locals 1
+
+    .line 1
+    const-class v0, LZ9/h$h;
+
+    .line 2
+    .line 3
+    invoke-static {v0, p0}, Ljava/lang/Enum;->valueOf(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/Enum;
+
+    .line 4
+    .line 5
+    .line 6
+    move-result-object p0
+
+    .line 7
+    check-cast p0, LZ9/h$h;
+
+    .line 8
+    .line 9
+    return-object p0
+.end method
+
+.method public static values()[LZ9/h$h;
+    .locals 1
+
+    .line 1
+    sget-object v0, LZ9/h$h;->q:[LZ9/h$h;
+
+    .line 2
+    .line 3
+    invoke-virtual {v0}, [LZ9/h$h;->clone()Ljava/lang/Object;
+
+    .line 4
+    .line 5
+    .line 6
+    move-result-object v0
+
+    .line 7
+    check-cast v0, [LZ9/h$h;
+
+    .line 8
+    .line 9
+    return-object v0
+.end method

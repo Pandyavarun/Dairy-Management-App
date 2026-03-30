@@ -1,0 +1,98 @@
+.class public abstract LP6/b;
+.super Ljava/lang/Object;
+.source "r8-map-id-02f95839ae4167eb4c00fe84895795a247f99e61b0b3e7dcaac951cd1062bb38"
+
+
+# direct methods
+.method public static a(C)Z
+    .locals 1
+
+    .line 1
+    const/16 v0, 0x61
+
+    .line 2
+    .line 3
+    if-lt p0, v0, :cond_0
+
+    .line 4
+    .line 5
+    const/16 v0, 0x7a
+
+    .line 6
+    .line 7
+    if-gt p0, v0, :cond_0
+
+    .line 8
+    .line 9
+    const/4 p0, 0x1
+
+    .line 10
+    return p0
+
+    .line 11
+    :cond_0
+    const/4 p0, 0x0
+
+    .line 12
+    return p0
+.end method
+
+.method public static b(C)Z
+    .locals 1
+
+    .line 1
+    const/16 v0, 0x41
+
+    .line 2
+    .line 3
+    if-lt p0, v0, :cond_0
+
+    .line 4
+    .line 5
+    const/16 v0, 0x5a
+
+    .line 6
+    .line 7
+    if-gt p0, v0, :cond_0
+
+    .line 8
+    .line 9
+    const/4 p0, 0x1
+
+    .line 10
+    return p0
+
+    .line 11
+    :cond_0
+    const/4 p0, 0x0
+
+    .line 12
+    return p0
+.end method
+
+.method public static c(C)C
+    .locals 1
+
+    .line 1
+    invoke-static {p0}, LP6/b;->a(C)Z
+
+    .line 2
+    .line 3
+    .line 4
+    move-result v0
+
+    .line 5
+    if-eqz v0, :cond_0
+
+    .line 6
+    .line 7
+    xor-int/lit8 p0, p0, 0x20
+
+    .line 8
+    .line 9
+    int-to-char p0, p0
+
+    .line 10
+    :cond_0
+    return p0
+.end method

@@ -1,0 +1,185 @@
+.class public interface abstract LY3/f;
+.super Ljava/lang/Object;
+.source "r8-map-id-02f95839ae4167eb4c00fe84895795a247f99e61b0b3e7dcaac951cd1062bb38"
+
+# interfaces
+.implements LY3/d;
+
+
+# direct methods
+.method public static F2(LY2/a;LY3/p;I)LY3/f;
+    .locals 1
+
+    .line 1
+    const/4 v0, 0x0
+
+    .line 2
+    invoke-static {p0, p1, p2, v0}, LY3/f;->L1(LY2/a;LY3/p;II)LY3/f;
+
+    .line 3
+    .line 4
+    .line 5
+    move-result-object p0
+
+    .line 6
+    return-object p0
+.end method
+
+.method public static L1(LY2/a;LY3/p;II)LY3/f;
+    .locals 1
+
+    .line 1
+    invoke-static {}, LY3/b;->D0()Z
+
+    .line 2
+    .line 3
+    .line 4
+    move-result v0
+
+    .line 5
+    if-eqz v0, :cond_0
+
+    .line 6
+    .line 7
+    new-instance v0, LY3/b;
+
+    .line 8
+    .line 9
+    invoke-direct {v0, p0, p1, p2, p3}, LY3/b;-><init>(LY2/a;LY3/p;II)V
+
+    .line 10
+    .line 11
+    .line 12
+    return-object v0
+
+    .line 13
+    :cond_0
+    new-instance v0, LY3/i;
+
+    .line 14
+    .line 15
+    invoke-direct {v0, p0, p1, p2, p3}, LY3/i;-><init>(LY2/a;LY3/p;II)V
+
+    .line 16
+    .line 17
+    .line 18
+    return-object v0
+.end method
+
+.method public static N0(Landroid/graphics/Bitmap;LY2/h;LY3/p;II)LY3/f;
+    .locals 8
+
+    .line 1
+    invoke-static {}, LY3/b;->D0()Z
+
+    .line 2
+    .line 3
+    .line 4
+    move-result v0
+
+    .line 5
+    if-eqz v0, :cond_0
+
+    .line 6
+    .line 7
+    new-instance v1, LY3/b;
+
+    .line 8
+    .line 9
+    move-object v2, p0
+
+    .line 10
+    move-object v3, p1
+
+    .line 11
+    move-object v4, p2
+
+    .line 12
+    move v5, p3
+
+    .line 13
+    move v6, p4
+
+    .line 14
+    invoke-direct/range {v1 .. v6}, LY3/b;-><init>(Landroid/graphics/Bitmap;LY2/h;LY3/p;II)V
+
+    .line 15
+    .line 16
+    .line 17
+    return-object v1
+
+    .line 18
+    :cond_0
+    move-object v2, p0
+
+    .line 19
+    move-object v3, p1
+
+    .line 20
+    move-object v4, p2
+
+    .line 21
+    move v5, p3
+
+    .line 22
+    move v6, p4
+
+    .line 23
+    new-instance p0, LY3/i;
+
+    .line 24
+    .line 25
+    move v7, v6
+
+    .line 26
+    move v6, v5
+
+    .line 27
+    move-object v5, v4
+
+    .line 28
+    move-object v4, v3
+
+    .line 29
+    move-object v3, v2
+
+    .line 30
+    move-object v2, p0
+
+    .line 31
+    invoke-direct/range {v2 .. v7}, LY3/i;-><init>(Landroid/graphics/Bitmap;LY2/h;LY3/p;II)V
+
+    .line 32
+    .line 33
+    .line 34
+    return-object v2
+.end method
+
+.method public static c2(Landroid/graphics/Bitmap;LY2/h;LY3/p;I)LY3/f;
+    .locals 1
+
+    .line 1
+    const/4 v0, 0x0
+
+    .line 2
+    invoke-static {p0, p1, p2, p3, v0}, LY3/f;->N0(Landroid/graphics/Bitmap;LY2/h;LY3/p;II)LY3/f;
+
+    .line 3
+    .line 4
+    .line 5
+    move-result-object p0
+
+    .line 6
+    return-object p0
+.end method
+
+
+# virtual methods
+.method public abstract G1()I
+.end method
+
+.method public abstract a0()LY2/a;
+.end method
+
+.method public abstract n1()I
+.end method

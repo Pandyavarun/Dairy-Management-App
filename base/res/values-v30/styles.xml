@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.BootSplash.EdgeToEdge" parent="@style/Theme.BootSplash.EdgeToEdge.Common">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">?darkContentBarsStyle</item>
+        <item name="android:windowLightNavigationBar">?darkContentBarsStyle</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:enforceNavigationBarContrast">false</item>
+    </style>
+    <style name="gboard_dark">
+        <item name="color">#292e32</item>
+    </style>
+    <style name="gboard_light">
+        <item name="color">#e8eaed</item>
+    </style>
+    <style name="gboard_tts_light">
+        <item name="color">#f8f9fa</item>
+    </style>
+    <style name="yandex_dark">
+        <item name="color">#121212</item>
+    </style>
+    <style name="yandex_light">
+        <item name="color">#eaeef2</item>
+    </style>
+</resources>
