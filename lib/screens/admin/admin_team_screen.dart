@@ -11,6 +11,7 @@ import '../../services/user_service.dart';
 import '../../widgets/app_loader.dart';
 import '../../widgets/dashboard_feature_card.dart';
 import '../../widgets/summary_metric_card.dart';
+import 'add_delivery_person_screen.dart';
 import '../customers/customer_list_screen.dart';
 import '../deliveries/admin_deliveries_screen.dart';
 import '../sales_requirements/admin_sales_requirement_screen.dart';
@@ -58,6 +59,21 @@ class AdminTeamScreen extends StatelessWidget {
         backgroundColor: const Color(0xFF47685A),
         foregroundColor: Colors.white,
       ),
+      floatingActionButton: mode == AdminTeamScreenMode.directory
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const AddDeliveryPersonScreen(),
+                  ),
+                );
+              },
+              backgroundColor: const Color(0xFF47685A),
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: const Text('Add Delivery Person'),
+            )
+          : null,
       body: StreamBuilder<List<AppUser>>(
         stream: userService.watchDeliveryBoys(),
         builder: (context, deliveryBoySnapshot) {

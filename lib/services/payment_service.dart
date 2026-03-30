@@ -2,30 +2,53 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../config/app_date_formatter.dart';
 import '../models/payment_record.dart';
+import 'owner_scope_service.dart';
 
 class PaymentService {
-  final CollectionReference<Map<String, dynamic>> _payments =
-      FirebaseFirestore.instance.collection('payments');
+  PaymentService({OwnerScopeService? ownerScopeService})
+    : _ownerScopeService = ownerScopeService ?? OwnerScopeService();
 
-  Stream<List<PaymentRecord>> watchPayments({
-    DateTime? month,
-  }) {
-    Query<Map<String, dynamic>> query = _payments;
-    if (month != null) {
-      query = query.where(
-        'monthKey',
-        isEqualTo: AppDateFormatter.monthKey(month),
+  final CollectionReference<Map<String, dynamic>> _payments = FirebaseFirestore
+      .instance
+      .collection('payments');
+  final OwnerScopeService _ownerScopeService;
+
+  Stream<List<PaymentRecord>> watchPayments({DateTime? month}) {
+    return Stream.fromFuture(_ownerScopeService.getOwnerId()).asyncExpand((
+      ownerId,
+    ) {
+      if (ownerId.isEmpty) {
+        return Stream.value(const <PaymentRecord>[]);
+      }
+
+      Query<Map<String, dynamic>> query = _payments.where(
+        'ownerId',
+        isEqualTo: ownerId,
       );
-    }
+      if (month != null) {
+        query = query.where(
+          'monthKey',
+          isEqualTo: AppDateFormatter.monthKey(month),
+        );
+      }
 
-    return query.snapshots().map(_mapPayments);
+      return query.snapshots().map(_mapPayments);
+    });
   }
 
   Future<List<PaymentRecord>> getPayments({
     DateTime? month,
     String? customerId,
   }) async {
-    Query<Map<String, dynamic>> query = _payments;
+    final ownerId = await _ownerScopeService.getOwnerId();
+    if (ownerId.isEmpty) {
+      return const <PaymentRecord>[];
+    }
+
+    Query<Map<String, dynamic>> query = _payments.where(
+      'ownerId',
+      isEqualTo: ownerId,
+    );
     if (month != null) {
       query = query.where(
         'monthKey',
@@ -40,19 +63,26 @@ class PaymentService {
     return _mapPayments(snapshot);
   }
 
-  Future<void> createPayment(PaymentRecord payment) {
-    return _payments.add(payment.toFirestore());
+  Future<void> createPayment(PaymentRecord payment) async {
+    final ownerId = await _ownerScopeService.getOwnerId();
+    await _payments.add({...payment.toFirestore(), 'ownerId': ownerId});
   }
 
-  Future<void> updatePayment(PaymentRecord payment) {
-    return _payments.doc(payment.id).update(payment.toFirestore());
+  Future<void> updatePayment(PaymentRecord payment) async {
+    final ownerId = await _ownerScopeService.getOwnerId();
+    await _payments.doc(payment.id).update({
+      ...payment.toFirestore(),
+      'ownerId': ownerId,
+    });
   }
 
   Future<void> deletePayment(String paymentId) {
     return _payments.doc(paymentId).delete();
   }
 
-  List<PaymentRecord> _mapPayments(QuerySnapshot<Map<String, dynamic>> snapshot) {
+  List<PaymentRecord> _mapPayments(
+    QuerySnapshot<Map<String, dynamic>> snapshot,
+  ) {
     final payments = snapshot.docs.map(PaymentRecord.fromFirestore).toList()
       ..sort((first, second) => second.date.compareTo(first.date));
 

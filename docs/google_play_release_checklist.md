@@ -6,6 +6,9 @@
 - A sample signing config file is available at `android/key.properties.example`.
 - Production Android builds now request `INTERNET` in `android/app/src/main/AndroidManifest.xml`.
 - The Android app label is now `Dairy Management`.
+- Login now includes a `Create Account` flow for owner onboarding.
+- Firestore data is owner-scoped with `ownerId` for multi-tenant separation.
+- In-app `Privacy Policy & Terms` summary is available from auth screens.
 
 ## Before building the Play bundle
 
@@ -80,6 +83,8 @@ This app is login protected. Google Play review will need working credentials an
 - An admin account
 - A delivery boy account
 
+Optional: share owner self-registration steps (`Create Account`) if review team should validate onboarding.
+
 Also provide any setup details needed to reach core screens.
 
 ### Data safety
@@ -94,6 +99,7 @@ Based on the current codebase, you will likely need to disclose collection or ha
 - Delivery records
 - Payment records
 - Vendor purchase records
+- Owner scope identifier (`ownerId`) used for data separation
 - Generated bill PDFs when a user explicitly shares them
 
 Current code review did **not** show ads SDKs, analytics SDKs, location access, contacts access, camera access, microphone access, or external cloud file storage.

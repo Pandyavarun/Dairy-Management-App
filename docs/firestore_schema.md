@@ -8,6 +8,7 @@ Document ID: Firebase Auth `uid`
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "name": "Ravi Kumar",
   "email": "ravi@example.com",
   "phone": "9999999999",
@@ -21,6 +22,9 @@ Document ID: Firebase Auth `uid`
 Notes:
 
 - `role` must be either `admin` or `delivery_boy`
+- `ownerId` identifies tenant scope
+- for an owner admin account: `ownerId == uid`
+- for a delivery boy account: `ownerId == admin owner uid`
 - this collection drives role-based navigation and permissions
 
 ## 2. `customers`
@@ -29,6 +33,7 @@ Document ID: auto ID
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "name": "Anita Sharma",
   "phone": "8888888888",
   "address": "Street, Area, City",
@@ -71,6 +76,7 @@ Document ID recommendation: `{customerId}_{dateKey}_{shift}_{subscriptionId}`
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "customerId": "customer_123",
   "customerName": "Anita Sharma",
   "deliveryBoyId": "uid_123",
@@ -103,6 +109,7 @@ Document ID: auto ID
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "customerId": "customer_123",
   "customerName": "Anita Sharma",
   "startDate": "Timestamp",
@@ -137,6 +144,7 @@ Document ID: auto ID
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "customerId": "customer_123",
   "amount": 1500.0,
   "date": "Timestamp",
@@ -153,6 +161,7 @@ Document ID: auto ID
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "vendorName": "Sharma Farm",
   "quantity": 80.0,
   "rate": 48.0,
@@ -169,6 +178,7 @@ Document ID: auto ID
 
 ```json
 {
+  "ownerId": "owner_uid_123",
   "name": "Milk",
   "unitLabel": "L",
   "defaultRate": 62.0,
@@ -185,7 +195,22 @@ Notes:
 - current route planning and delivery totals are still based on milk deliveries
 - monthly bills now show product-wise summarized totals instead of day-by-day rows
 
-## 8. `settings`
+## 8. `app_settings`
+
+Document ID: `{ownerId}_dairy_profile`
+
+```json
+{
+  "ownerId": "owner_uid_123",
+  "dairyName": "My Dairy",
+  "ownerName": "Ravi Kumar",
+  "phone": "9999999999",
+  "email": "ravi@example.com",
+  "address": "Street, Area, City"
+}
+```
+
+## 9. `settings`
 
 Suggested document: `settings/app`
 
@@ -210,8 +235,8 @@ This is optional for now. Use it only if you want global defaults instead of sto
 ## Query examples
 
 - delivery boy today customers:
-  `where('deliveryBoyId', isEqualTo: uid)` + `where('dateKey', isEqualTo: '2026-03-28')`
+  `where('ownerId', isEqualTo: ownerId)` + `where('deliveryBoyId', isEqualTo: uid)` + `where('dateKey', isEqualTo: '2026-03-28')`
 - customer monthly bill:
-  `where('customerId', isEqualTo: customerId)` + `where('monthKey', isEqualTo: '2026-03')`
+  `where('ownerId', isEqualTo: ownerId)` + `where('customerId', isEqualTo: customerId)` + `where('monthKey', isEqualTo: '2026-03')`
 - pending dues:
   aggregate monthly delivery totals minus monthly payments

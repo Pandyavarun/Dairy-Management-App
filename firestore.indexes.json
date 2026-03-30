@@ -5,6 +5,10 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "deliveryBoyId",
           "order": "ASCENDING"
         },
@@ -18,6 +22,10 @@
       "collectionGroup": "deliveries",
       "queryScope": "COLLECTION",
       "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
         {
           "fieldPath": "customerId",
           "order": "ASCENDING"
@@ -33,11 +41,85 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "customerId",
           "order": "ASCENDING"
         },
         {
           "fieldPath": "monthKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "customers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "assignedDeliveryBoyId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "deliveries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "monthKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "monthKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "vendor_purchases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "ownerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "monthKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "ownerId",
           "order": "ASCENDING"
         }
       ]

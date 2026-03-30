@@ -5,6 +5,7 @@ import '../../controllers/auth_controller.dart';
 import '../sales_requirements/delivery_sales_requirement_screen.dart';
 import 'assigned_customers_screen.dart';
 import 'delivery_entries_screen.dart';
+import 'setup_otp_login_screen.dart';
 
 import '../../widgets/admin_grid_card.dart';
 
@@ -27,9 +28,25 @@ class DeliveryHomeScreen extends StatelessWidget {
                 backgroundColor: Colors.white,
                 child: Text(
                   (user?.name ?? 'D').substring(0, 1).toUpperCase(),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.sms_rounded),
+              title: const Text('Enable OTP Login'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        SetupOtpLoginScreen(initialPhone: user?.phone ?? ''),
+                  ),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.logout_rounded),
@@ -68,16 +85,16 @@ class DeliveryHomeScreen extends StatelessWidget {
                 Text(
                   'Hello, ${user?.name ?? 'Delivery Partner'}!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF47685A),
-                      ),
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF47685A),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Manage your deliveries and requirements.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey.shade600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -101,7 +118,8 @@ class DeliveryHomeScreen extends StatelessWidget {
                       MaterialPageRoute<void>(
                         builder: (_) => const DeliveryEntriesScreen(
                           title: 'Add Delivery',
-                          description: 'Save delivery quantities for customers assigned to your route.',
+                          description:
+                              'Save delivery quantities for customers assigned to your route.',
                         ),
                       ),
                     );
@@ -131,7 +149,8 @@ class DeliveryHomeScreen extends StatelessWidget {
                         builder: (_) => const DeliveryEntriesScreen(
                           title: 'Date-Wise Editing',
                           openDatePickerOnStart: true,
-                          description: 'Choose a date and edit saved delivery quantities for that day.',
+                          description:
+                              'Choose a date and edit saved delivery quantities for that day.',
                         ),
                       ),
                     );

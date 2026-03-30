@@ -41,6 +41,35 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   _DashboardTab _selectedTab = _DashboardTab.sales;
+  late Future<List<Object>> _dashboardFuture;
+  bool _hasInitializedDashboardFuture = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasInitializedDashboardFuture) {
+      return;
+    }
+
+    _dashboardFuture = _loadDashboardSnapshot();
+    _hasInitializedDashboardFuture = true;
+  }
+
+  Future<List<Object>> _loadDashboardSnapshot() {
+    final customerService = context.read<CustomerService>();
+    final userService = context.read<UserService>();
+    final vendorService = context.read<VendorService>();
+    final reportService = context.read<ReportService>();
+    final today = AppDateFormatter.normalizeDate(DateTime.now());
+    final currentMonth = AppDateFormatter.monthStart(today);
+
+    return Future.wait<Object>([
+      customerService.getCustomers(),
+      userService.getDeliveryBoys(),
+      vendorService.getPurchases(month: currentMonth),
+      reportService.getAdminSalesRequirementOverview(date: today),
+    ]);
+  }
 
   List<_DashboardFeature> _buildSalesFeatures() {
     return const [
@@ -151,13 +180,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final authController = context.read<AuthController>();
-    final customerService = context.read<CustomerService>();
-    final userService = context.read<UserService>();
-    final vendorService = context.read<VendorService>();
-    final reportService = context.read<ReportService>();
     final deliveryService = context.read<DeliveryService>();
     final today = AppDateFormatter.normalizeDate(DateTime.now());
-    final currentMonth = AppDateFormatter.monthStart(today);
     final features = _selectedTab == _DashboardTab.sales
         ? _buildSalesFeatures()
         : _buildCollectionFeatures();
@@ -223,12 +247,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         ],
       ),
       body: FutureBuilder<List<Object>>(
-        future: Future.wait<Object>([
-          customerService.getCustomers(),
-          userService.getDeliveryBoys(),
-          vendorService.getPurchases(month: currentMonth),
-          reportService.getAdminSalesRequirementOverview(date: today),
-        ]),
+        future: _dashboardFuture,
         builder: (context, snapshot) {
           final customers = snapshot.hasData
               ? snapshot.data![0] as List<Customer>

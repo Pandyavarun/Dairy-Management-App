@@ -1,10 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum AppRole {
-  admin,
-  deliveryBoy,
-  unknown,
-}
+enum AppRole { admin, deliveryBoy, unknown }
 
 extension AppRoleX on AppRole {
   String get value {
@@ -46,6 +42,7 @@ extension AppRoleX on AppRole {
 class AppUser {
   const AppUser({
     required this.id,
+    required this.ownerId,
     required this.name,
     required this.email,
     required this.role,
@@ -54,6 +51,7 @@ class AppUser {
   });
 
   final String id;
+  final String ownerId;
   final String name;
   final String email;
   final String? phone;
@@ -67,6 +65,7 @@ class AppUser {
 
     return AppUser(
       id: snapshot.id,
+      ownerId: data['ownerId'] as String? ?? snapshot.id,
       name: data['name'] as String? ?? '',
       email: data['email'] as String? ?? '',
       phone: data['phone'] as String?,

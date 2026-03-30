@@ -4,9 +4,14 @@ import '../config/app_date_formatter.dart';
 import '../models/customer.dart';
 import '../models/delivery_record.dart';
 import '../models/delivery_shift.dart';
+import 'owner_scope_service.dart';
 
 class DeliveryService {
+  DeliveryService({OwnerScopeService? ownerScopeService})
+    : _ownerScopeService = ownerScopeService ?? OwnerScopeService();
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final OwnerScopeService _ownerScopeService;
 
   CollectionReference<Map<String, dynamic>> get _deliveries =>
       _firestore.collection('deliveries');
@@ -23,18 +28,27 @@ class DeliveryService {
       AppDateFormatter.normalizeDate(date),
     );
 
-    return _deliveries
-        .where('deliveryBoyId', isEqualTo: deliveryBoyId)
-        .where('dateKey', isEqualTo: dateKey)
-        .snapshots()
-        .map((snapshot) {
-          final records = snapshot.docs
-              .map(DeliveryRecord.fromFirestore)
-              .toList();
-          _sortDeliveries(records);
+    return Stream.fromFuture(_ownerScopeService.getOwnerId()).asyncExpand((
+      ownerId,
+    ) {
+      if (ownerId.isEmpty) {
+        return Stream.value(const <DeliveryRecord>[]);
+      }
 
-          return records;
-        });
+      return _deliveries
+          .where('ownerId', isEqualTo: ownerId)
+          .where('deliveryBoyId', isEqualTo: deliveryBoyId)
+          .where('dateKey', isEqualTo: dateKey)
+          .snapshots()
+          .map((snapshot) {
+            final records = snapshot.docs
+                .map(DeliveryRecord.fromFirestore)
+                .toList();
+            _sortDeliveries(records);
+
+            return records;
+          });
+    });
   }
 
   Stream<List<DeliveryRecord>> watchDeliveriesForDate(DateTime date) {
@@ -42,20 +56,33 @@ class DeliveryService {
       AppDateFormatter.normalizeDate(date),
     );
 
-    return _deliveries
-        .where('dateKey', isEqualTo: dateKey)
-        .snapshots()
-        .map(_mapDeliveries);
+    return Stream.fromFuture(_ownerScopeService.getOwnerId()).asyncExpand((
+      ownerId,
+    ) {
+      if (ownerId.isEmpty) {
+        return Stream.value(const <DeliveryRecord>[]);
+      }
+
+      return _deliveries
+          .where('ownerId', isEqualTo: ownerId)
+          .where('dateKey', isEqualTo: dateKey)
+          .snapshots()
+          .map(_mapDeliveries);
+    });
   }
 
   Future<List<DeliveryRecord>> getDeliveriesForMonth(
     DateTime month, {
     String? customerId,
   }) async {
-    Query<Map<String, dynamic>> query = _deliveries.where(
-      'monthKey',
-      isEqualTo: AppDateFormatter.monthKey(month),
-    );
+    final ownerId = await _ownerScopeService.getOwnerId();
+    if (ownerId.isEmpty) {
+      return const <DeliveryRecord>[];
+    }
+
+    Query<Map<String, dynamic>> query = _deliveries
+        .where('ownerId', isEqualTo: ownerId)
+        .where('monthKey', isEqualTo: AppDateFormatter.monthKey(month));
 
     if (customerId != null && customerId.isNotEmpty) {
       query = query.where('customerId', isEqualTo: customerId);
@@ -75,10 +102,12 @@ class DeliveryService {
     double? morningPlannedQty,
     double? eveningPlannedQty,
   }) async {
+    final ownerId = await _ownerScopeService.getOwnerId();
     final batch = _firestore.batch();
 
     _queueShiftSave(
       batch: batch,
+      ownerId: ownerId,
       customer: customer,
       deliveryBoyId: deliveryBoyId,
       updatedBy: updatedBy,
@@ -90,6 +119,7 @@ class DeliveryService {
 
     _queueShiftSave(
       batch: batch,
+      ownerId: ownerId,
       customer: customer,
       deliveryBoyId: deliveryBoyId,
       updatedBy: updatedBy,
@@ -110,15 +140,15 @@ class DeliveryService {
       return;
     }
 
+    final ownerId = await _ownerScopeService.getOwnerId();
     final batch = _firestore.batch();
     final savedIds = records.map((record) => record.id).toSet();
 
     for (final record in records) {
-      batch.set(
-        _deliveries.doc(record.id),
-        record.toFirestore(),
-        SetOptions(merge: true),
-      );
+      batch.set(_deliveries.doc(record.id), {
+        ...record.toFirestore(),
+        'ownerId': ownerId,
+      }, SetOptions(merge: true));
     }
 
     for (final recordId in deleteRecordIds.toSet()) {
@@ -133,13 +163,20 @@ class DeliveryService {
   }
 
   Future<void> saveDeliveryRecord(DeliveryRecord record) {
-    return _deliveries
-        .doc(record.id)
-        .set(record.toFirestore(), SetOptions(merge: true));
+    return _saveDeliveryRecord(record);
+  }
+
+  Future<void> _saveDeliveryRecord(DeliveryRecord record) async {
+    final ownerId = await _ownerScopeService.getOwnerId();
+    return _deliveries.doc(record.id).set({
+      ...record.toFirestore(),
+      'ownerId': ownerId,
+    }, SetOptions(merge: true));
   }
 
   void _queueShiftSave({
     required WriteBatch batch,
+    required String ownerId,
     required Customer customer,
     required String deliveryBoyId,
     required String updatedBy,
@@ -163,11 +200,10 @@ class DeliveryService {
       plannedQty: resolvedPlannedQty,
     );
 
-    batch.set(
-      _deliveries.doc(record.id),
-      record.toFirestore(),
-      SetOptions(merge: true),
-    );
+    batch.set(_deliveries.doc(record.id), {
+      ...record.toFirestore(),
+      'ownerId': ownerId,
+    }, SetOptions(merge: true));
   }
 
   List<DeliveryRecord> _mapDeliveries(

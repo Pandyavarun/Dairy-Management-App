@@ -1,54 +1,83 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/customer.dart';
+import 'owner_scope_service.dart';
 
 class CustomerService {
-  final CollectionReference<Map<String, dynamic>> _customers =
-      FirebaseFirestore.instance.collection('customers');
+  CustomerService({OwnerScopeService? ownerScopeService})
+    : _ownerScopeService = ownerScopeService ?? OwnerScopeService();
+
+  final CollectionReference<Map<String, dynamic>> _customers = FirebaseFirestore
+      .instance
+      .collection('customers');
+  final OwnerScopeService _ownerScopeService;
 
   Stream<List<Customer>> watchCustomers() {
-    return _customers.snapshots().map((snapshot) {
-      final customers = snapshot.docs.map(Customer.fromFirestore).toList()
-        ..sort(
-          (first, second) => first.name.toLowerCase().compareTo(
-                second.name.toLowerCase(),
-              ),
-        );
+    return Stream.fromFuture(_ownerScopeService.getOwnerId()).asyncExpand((
+      ownerId,
+    ) {
+      if (ownerId.isEmpty) {
+        return Stream.value(const <Customer>[]);
+      }
 
-      return customers;
+      return _customers.where('ownerId', isEqualTo: ownerId).snapshots().map((
+        snapshot,
+      ) {
+        final customers = snapshot.docs.map(Customer.fromFirestore).toList()
+          ..sort(
+            (first, second) =>
+                first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+          );
+
+        return customers;
+      });
     });
   }
 
   Future<List<Customer>> getCustomers() async {
-    final snapshot = await _customers.get();
+    final ownerId = await _ownerScopeService.getOwnerId();
+    if (ownerId.isEmpty) {
+      return const <Customer>[];
+    }
+
+    final snapshot = await _customers
+        .where('ownerId', isEqualTo: ownerId)
+        .get();
     final customers = snapshot.docs.map(Customer.fromFirestore).toList()
       ..sort(
-        (first, second) => first.name.toLowerCase().compareTo(
-              second.name.toLowerCase(),
-            ),
+        (first, second) =>
+            first.name.toLowerCase().compareTo(second.name.toLowerCase()),
       );
 
     return customers;
   }
 
-  Future<List<Customer>> getCustomersForDeliveryBoy(String deliveryBoyId) async {
+  Future<List<Customer>> getCustomersForDeliveryBoy(
+    String deliveryBoyId,
+  ) async {
     if (deliveryBoyId.isEmpty) {
       return const <Customer>[];
     }
 
+    final ownerId = await _ownerScopeService.getOwnerId();
+    if (ownerId.isEmpty) {
+      return const <Customer>[];
+    }
+
     final snapshot = await _customers
+        .where('ownerId', isEqualTo: ownerId)
         .where('assignedDeliveryBoyId', isEqualTo: deliveryBoyId)
         .get();
 
-    final customers = snapshot.docs
-        .map(Customer.fromFirestore)
-        .where((customer) => customer.isActive)
-        .toList()
-      ..sort(
-        (first, second) => first.name.toLowerCase().compareTo(
-              second.name.toLowerCase(),
-            ),
-      );
+    final customers =
+        snapshot.docs
+            .map(Customer.fromFirestore)
+            .where((customer) => customer.isActive)
+            .toList()
+          ..sort(
+            (first, second) =>
+                first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+          );
 
     return customers;
   }
@@ -58,30 +87,45 @@ class CustomerService {
       return Stream.value(const <Customer>[]);
     }
 
-    return _customers
-        .where('assignedDeliveryBoyId', isEqualTo: deliveryBoyId)
-        .snapshots()
-        .map((snapshot) {
-      final customers = snapshot.docs
-          .map(Customer.fromFirestore)
-          .where((customer) => customer.isActive)
-          .toList()
-        ..sort(
-          (first, second) => first.name.toLowerCase().compareTo(
-                second.name.toLowerCase(),
-              ),
-        );
+    return Stream.fromFuture(_ownerScopeService.getOwnerId()).asyncExpand((
+      ownerId,
+    ) {
+      if (ownerId.isEmpty) {
+        return Stream.value(const <Customer>[]);
+      }
 
-      return customers;
+      return _customers
+          .where('ownerId', isEqualTo: ownerId)
+          .where('assignedDeliveryBoyId', isEqualTo: deliveryBoyId)
+          .snapshots()
+          .map((snapshot) {
+            final customers =
+                snapshot.docs
+                    .map(Customer.fromFirestore)
+                    .where((customer) => customer.isActive)
+                    .toList()
+                  ..sort(
+                    (first, second) => first.name.toLowerCase().compareTo(
+                      second.name.toLowerCase(),
+                    ),
+                  );
+
+            return customers;
+          });
     });
   }
 
-  Future<void> createCustomer(Customer customer) {
-    return _customers.add(customer.toCreateFirestore());
+  Future<void> createCustomer(Customer customer) async {
+    final ownerId = await _ownerScopeService.getOwnerId();
+    await _customers.add({...customer.toCreateFirestore(), 'ownerId': ownerId});
   }
 
-  Future<void> updateCustomer(Customer customer) {
-    return _customers.doc(customer.id).update(customer.toFirestore());
+  Future<void> updateCustomer(Customer customer) async {
+    final ownerId = await _ownerScopeService.getOwnerId();
+    await _customers.doc(customer.id).update({
+      ...customer.toFirestore(),
+      'ownerId': ownerId,
+    });
   }
 
   Future<void> deleteCustomer(String customerId) {

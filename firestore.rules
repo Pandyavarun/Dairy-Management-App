@@ -26,6 +26,22 @@ service cloud.firestore {
       return get(userPath(request.auth.uid)).data;
     }
 
+    function currentOwnerId() {
+      return ('ownerId' in currentUserData()
+              && currentUserData().ownerId is string
+              && currentUserData().ownerId.size() > 0)
+          ? currentUserData().ownerId
+          : request.auth.uid;
+    }
+
+    function ownerIdForUser(userId) {
+      return ('ownerId' in get(userPath(userId)).data
+              && get(userPath(userId)).data.ownerId is string
+              && get(userPath(userId)).data.ownerId.size() > 0)
+          ? get(userPath(userId)).data.ownerId
+          : currentOwnerId();
+    }
+
     function isAdmin() {
       return currentUserExists()
           && currentUserData().role == 'admin'
@@ -58,18 +74,11 @@ service cloud.firestore {
       return !(key in data) || data[key] is timestamp;
     }
 
-    function deliveryBoyExists(deliveryBoyId) {
-      return deliveryBoyId is string
-          && deliveryBoyId.size() > 0
-          && exists(userPath(deliveryBoyId))
-          && get(userPath(deliveryBoyId)).data.role == 'delivery_boy'
-          && get(userPath(deliveryBoyId)).data.isActive == true;
-    }
-
-    function isValidUserData() {
+    function isValidOwnerSignupData(userId) {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'name',
             'email',
             'phone',
@@ -79,11 +88,45 @@ service cloud.firestore {
             'updatedAt',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'name',
             'email',
             'role',
             'isActive',
           ])
+          && data.ownerId == userId
+          && data.name is string
+          && data.name.size() > 0
+          && data.email is string
+          && data.email.size() > 0
+          && optionalString(data, 'phone')
+          && data.role == 'admin'
+          && data.isActive == true
+          && optionalTimestamp(data, 'createdAt')
+          && optionalTimestamp(data, 'updatedAt');
+    }
+
+    function isValidAdminManagedUserData() {
+      let data = request.resource.data;
+
+      return data.keys().hasOnly([
+            'ownerId',
+            'name',
+            'email',
+            'phone',
+            'role',
+            'isActive',
+            'createdAt',
+            'updatedAt',
+          ])
+          && data.keys().hasAll([
+            'ownerId',
+            'name',
+            'email',
+            'role',
+            'isActive',
+          ])
+          && data.ownerId == currentOwnerId()
           && data.name is string
           && data.name.size() > 0
           && data.email is string
@@ -95,10 +138,28 @@ service cloud.firestore {
           && optionalTimestamp(data, 'updatedAt');
     }
 
+    function ownerScopedRead() {
+      return resource.data.ownerId == currentOwnerId();
+    }
+
+    function ownerScopedWrite() {
+      return request.resource.data.ownerId == currentOwnerId();
+    }
+
+    function deliveryBoyExists(deliveryBoyId, ownerId) {
+      return deliveryBoyId is string
+          && deliveryBoyId.size() > 0
+          && exists(userPath(deliveryBoyId))
+          && get(userPath(deliveryBoyId)).data.role == 'delivery_boy'
+          && get(userPath(deliveryBoyId)).data.isActive == true
+          && ownerIdForUser(deliveryBoyId) == ownerId;
+    }
+
     function isValidCustomerData() {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'name',
             'phone',
             'address',
@@ -112,6 +173,7 @@ service cloud.firestore {
             'updatedAt',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'name',
             'phone',
             'address',
@@ -119,6 +181,8 @@ service cloud.firestore {
             'eveningQty',
             'assignedDeliveryBoyId',
           ])
+          && data.ownerId is string
+          && data.ownerId.size() > 0
           && data.name is string
           && data.name.size() > 0
           && data.phone is string
@@ -129,7 +193,7 @@ service cloud.firestore {
           && data.morningQty >= 0
           && data.eveningQty is number
           && data.eveningQty >= 0
-          && deliveryBoyExists(data.assignedDeliveryBoyId)
+          && deliveryBoyExists(data.assignedDeliveryBoyId, data.ownerId)
           && optionalNumber(data, 'ratePerLiter')
           && (!('subscriptions' in data)
               || (data.subscriptions is list
@@ -143,23 +207,24 @@ service cloud.firestore {
       return get(customerPath(customerId)).data;
     }
 
+    function customerBelongsToOwner(customerId, ownerId) {
+      return exists(customerPath(customerId))
+          && customerData(customerId).ownerId == ownerId;
+    }
+
     function isActiveCustomerForDeliveryBoy(customerId, deliveryBoyId) {
       return exists(customerPath(customerId))
           && customerData(customerId).assignedDeliveryBoyId == deliveryBoyId
+          && customerData(customerId).ownerId == currentOwnerId()
           && (!('isActive' in customerData(customerId))
               || customerData(customerId).isActive == true);
-    }
-
-    function plannedQtyForShift(customerId, shift) {
-      return shift == 'morning'
-          ? customerData(customerId).morningQty
-          : customerData(customerId).eveningQty;
     }
 
     function isValidDeliveryData() {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'customerId',
             'customerName',
             'deliveryBoyId',
@@ -180,6 +245,7 @@ service cloud.firestore {
             'updatedAt',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'customerId',
             'customerName',
             'deliveryBoyId',
@@ -192,12 +258,16 @@ service cloud.firestore {
             'status',
             'updatedBy',
           ])
+          && data.ownerId is string
+          && data.ownerId.size() > 0
           && data.customerId is string
           && data.customerId.size() > 0
+          && customerBelongsToOwner(data.customerId, data.ownerId)
           && data.customerName is string
           && data.customerName.size() > 0
           && data.deliveryBoyId is string
           && data.deliveryBoyId.size() > 0
+          && ownerIdForUser(data.deliveryBoyId) == data.ownerId
           && data.date is timestamp
           && data.dateKey is string
           && data.dateKey.size() > 0
@@ -229,6 +299,7 @@ service cloud.firestore {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'customerId',
             'amount',
             'date',
@@ -238,6 +309,7 @@ service cloud.firestore {
             'notes',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'customerId',
             'amount',
             'date',
@@ -245,9 +317,11 @@ service cloud.firestore {
             'paymentMode',
             'createdBy',
           ])
+          && data.ownerId is string
+          && data.ownerId.size() > 0
           && data.customerId is string
           && data.customerId.size() > 0
-          && exists(customerPath(data.customerId))
+          && customerBelongsToOwner(data.customerId, data.ownerId)
           && data.amount is number
           && data.amount > 0
           && data.date is timestamp
@@ -264,6 +338,7 @@ service cloud.firestore {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'vendorName',
             'quantity',
             'rate',
@@ -273,6 +348,7 @@ service cloud.firestore {
             'createdBy',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'vendorName',
             'quantity',
             'rate',
@@ -281,6 +357,8 @@ service cloud.firestore {
             'monthKey',
             'createdBy',
           ])
+          && data.ownerId is string
+          && data.ownerId.size() > 0
           && data.vendorName is string
           && data.vendorName.size() > 0
           && data.quantity is number
@@ -300,6 +378,7 @@ service cloud.firestore {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'customerId',
             'customerName',
             'startDate',
@@ -316,6 +395,7 @@ service cloud.firestore {
             'updatedAt',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'customerId',
             'customerName',
             'startDate',
@@ -326,9 +406,11 @@ service cloud.firestore {
             'eveningOff',
             'createdBy',
           ])
+          && data.ownerId is string
+          && data.ownerId.size() > 0
           && data.customerId is string
           && data.customerId.size() > 0
-          && exists(customerPath(data.customerId))
+          && customerBelongsToOwner(data.customerId, data.ownerId)
           && data.customerName is string
           && data.customerName == customerData(data.customerId).name
           && data.startDate is timestamp
@@ -356,6 +438,7 @@ service cloud.firestore {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'name',
             'unitLabel',
             'defaultRate',
@@ -365,11 +448,14 @@ service cloud.firestore {
             'updatedAt',
           ])
           && data.keys().hasAll([
+            'ownerId',
             'name',
             'unitLabel',
             'defaultRate',
             'isActive',
           ])
+          && data.ownerId is string
+          && data.ownerId.size() > 0
           && data.name is string
           && data.name.size() > 0
           && data.unitLabel is string
@@ -386,6 +472,7 @@ service cloud.firestore {
       let data = request.resource.data;
 
       return data.keys().hasOnly([
+            'ownerId',
             'dairyName',
             'ownerName',
             'phone',
@@ -399,6 +486,8 @@ service cloud.firestore {
             'branchName',
             'updatedAt',
           ])
+          && data.keys().hasAll(['ownerId'])
+          && data.ownerId == currentOwnerId()
           && optionalString(data, 'dairyName')
           && optionalString(data, 'ownerName')
           && optionalString(data, 'phone')
@@ -420,6 +509,7 @@ service cloud.firestore {
 
       return isDeliveryBoy()
           && isValidDeliveryData()
+          && data.ownerId == currentOwnerId()
           && data.deliveryBoyId == request.auth.uid
           && data.updatedBy == request.auth.uid
           && isActiveCustomerForDeliveryBoy(data.customerId, request.auth.uid)
@@ -427,59 +517,85 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isAdmin() || isSignedInUser(userId);
+      allow get: if isSignedInUser(userId)
+          || (isAdmin() && ownerScopedRead());
       allow list: if isAdmin();
-      allow create, update: if isAdmin() && isValidUserData();
-      allow delete: if isAdmin();
+      allow create: if isSignedInUser(userId)
+          && isValidOwnerSignupData(userId)
+          || (isAdmin() && isValidAdminManagedUserData());
+      allow update: if isAdmin() && isValidAdminManagedUserData();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /customers/{customerId} {
-      allow read: if isAdmin()
+      allow read: if (isAdmin() && ownerScopedRead())
           || (isDeliveryBoy()
+              && ownerScopedRead()
               && resource.data.assignedDeliveryBoyId == request.auth.uid
               && (!('isActive' in resource.data) || resource.data.isActive == true));
-      allow create, update: if isAdmin() && isValidCustomerData();
-      allow delete: if isAdmin();
+      allow create, update: if isAdmin()
+          && ownerScopedWrite()
+          && isValidCustomerData();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /deliveries/{deliveryId} {
-      allow read: if isAdmin()
-          || (isDeliveryBoy() && resource.data.deliveryBoyId == request.auth.uid);
-      allow create, update: if (isAdmin() && isValidDeliveryData())
+      allow read: if (isAdmin() && ownerScopedRead())
+          || (isDeliveryBoy()
+              && ownerScopedRead()
+              && resource.data.deliveryBoyId == request.auth.uid);
+      allow create, update: if (isAdmin()
+          && ownerScopedWrite()
+          && isValidDeliveryData())
           || isDeliveryBoyDeliveryWrite();
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /payments/{paymentId} {
-      allow read: if isAdmin();
-      allow create, update: if isAdmin() && isValidPaymentData();
-      allow delete: if isAdmin();
+      allow read: if isAdmin() && ownerScopedRead();
+      allow create, update: if isAdmin()
+          && ownerScopedWrite()
+          && isValidPaymentData();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /vendor_purchases/{purchaseId} {
-      allow read: if isAdmin();
-      allow create, update: if isAdmin() && isValidVendorPurchaseData();
-      allow delete: if isAdmin();
+      allow read: if isAdmin() && ownerScopedRead();
+      allow create, update: if isAdmin()
+          && ownerScopedWrite()
+          && isValidVendorPurchaseData();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /customer_leaves/{leaveId} {
-      allow read: if isAdmin() || isDeliveryBoy();
-      allow create, update: if isAdmin() && isValidCustomerLeaveData();
-      allow delete: if isAdmin();
+      allow read: if (isAdmin() && ownerScopedRead())
+          || (isDeliveryBoy() && ownerScopedRead());
+      allow create, update: if isAdmin()
+          && ownerScopedWrite()
+          && isValidCustomerLeaveData();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /products/{productId} {
-      allow read: if isAdmin() || isDeliveryBoy();
-      allow create, update: if isAdmin() && isValidProductData();
-      allow delete: if isAdmin();
+      allow read: if (isAdmin() && ownerScopedRead())
+          || (isDeliveryBoy() && ownerScopedRead());
+      allow create, update: if isAdmin()
+          && ownerScopedWrite()
+          && isValidProductData();
+      allow delete: if isAdmin() && ownerScopedRead();
     }
 
     match /app_settings/{documentId} {
-      allow read: if isAdmin() && documentId == 'dairy_profile';
+      allow read: if isAdmin()
+          && ownerScopedRead()
+          && documentId == currentOwnerId() + '_dairy_profile';
       allow create, update: if isAdmin()
-          && documentId == 'dairy_profile'
+          && ownerScopedWrite()
+          && documentId == currentOwnerId() + '_dairy_profile'
           && isValidDairyProfileData();
-      allow delete: if isAdmin() && documentId == 'dairy_profile';
+      allow delete: if isAdmin()
+          && ownerScopedRead()
+          && documentId == currentOwnerId() + '_dairy_profile';
     }
 
     match /settings/{documentId} {

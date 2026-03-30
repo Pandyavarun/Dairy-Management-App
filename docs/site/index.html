@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dairy Management App</title>
+  <style>
+    :root {
+      --bg: #f4f8f5;
+      --card: #ffffff;
+      --ink: #1f2f27;
+      --muted: #5f6f66;
+      --brand: #47685a;
+      --line: #dbe7df;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(165deg, #eef6f1 0%, #f9fcfa 100%);
+      color: var(--ink);
+    }
+    .wrap {
+      max-width: 900px;
+      margin: 48px auto;
+      padding: 0 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 10px 24px rgba(25, 50, 38, 0.06);
+    }
+    h1 {
+      margin: 0 0 10px;
+      color: var(--brand);
+      font-size: 34px;
+      line-height: 1.2;
+    }
+    p { color: var(--muted); line-height: 1.65; }
+    .links {
+      margin-top: 24px;
+      display: grid;
+      gap: 12px;
+    }
+    a.link {
+      display: block;
+      text-decoration: none;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: var(--ink);
+      background: #fbfdfb;
+      transition: border-color 120ms ease, transform 120ms ease;
+    }
+    a.link:hover {
+      border-color: var(--brand);
+      transform: translateY(-1px);
+    }
+    footer {
+      margin-top: 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Dairy Management App</h1>
+      <p>
+        Dairy Management App helps dairy owners and delivery staff manage customers,
+        deliveries, billing, and payments in a secure workflow.
+      </p>
+      <div class="links">
+        <a class="link" href="privacy-policy.html">Privacy Policy</a>
+        <a class="link" href="terms-of-service.html">Terms of Service</a>
+      </div>
+      <footer>
+        Contact: varunpandya12a@gmail.com
+      </footer>
+    </section>
+  </main>
+</body>
+</html>
